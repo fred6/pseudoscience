@@ -1,11 +1,11 @@
 body {
-  background-color: #eceaba;
-  color: #a19c4d;
-  font-family: Times, 'Times New Roman', Georgia, serif;
+  background-color: #fff;
+  font-family: "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Verdana, Tahoma, sans-serif;
+  color: #000;
 }
 
 body a {
-  color: #d69343;
+  color: #1857a0;
 }
 
 #page_title {
