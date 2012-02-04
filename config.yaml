@@ -1,0 +1,5 @@
+entries_dir  : entries/
+out_dir      : out/
+templates_dir: templates/
+
+entries_ext  : .yaml
