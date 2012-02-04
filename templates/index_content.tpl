@@ -1,7 +1,7 @@
 <div id="index">
   <ul>
-{% for chunk in chunks %}
-    <li><a href="{{ chunk.name }}.html">{{ chunk.name }}</a></li>
+{% for page in pages %}
+    <li><a href="{{ page.name }}.html">{{ page.name }}</a></li>
 {% endfor %}
   </ul>
 </div>

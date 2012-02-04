@@ -1,5 +1,5 @@
-entries_dir  : entries/
+pages_dir  : pages/
 out_dir      : out/
 templates_dir: templates/
 
-entries_ext  : .yaml
+pages_ext  : .md
