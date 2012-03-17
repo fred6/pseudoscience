@@ -42,11 +42,14 @@ class TemplateRenderer():
         # render chunk pages
         for ch in read_entries():
             ent_vars = {'page': ch}
+
             layout_vars = {
+              'title': cfg['site_title'] + ' - ' + ch['name'],
               'content': self.tpl['page_content'].render(ent_vars)
             }
             
-            f = open(cfg['out_dir']+ch['name']+'.html', 'w')
+            fname = cfg['out_dir'] + ch['name'] + '.html'
+            f = open(fname, 'w')
             f.write(self.tpl['layout'].render(layout_vars))
             f.close()
 
@@ -56,6 +59,7 @@ class TemplateRenderer():
         # render index
         index_vars = {'pages': pages}
         layout_vars = {
+          'title': cfg['site_title'],
           'content': self.tpl['index_content'].render(index_vars)
         }
             

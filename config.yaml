@@ -1,5 +1,6 @@
-pages_dir  : pages/
+site_title   : my site
+pages_dir    : pages/
 out_dir      : out/
 templates_dir: templates/
 
-pages_ext  : .md
+pages_ext    : .md
