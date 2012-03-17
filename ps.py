@@ -16,7 +16,7 @@ def read_entries():
             file.close()
 
             yield {'name': ef[:ef.find(cfg['pages_ext'])],
-                   'content': misaka.html(content)}
+                   'content': misaka.html(content, extensions=misaka.EXT_NO_INTRA_EMPHASIS)}
 
 
 class TemplateRenderer():
