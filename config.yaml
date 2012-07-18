@@ -1,5 +1,5 @@
 site_title   : my site
-pages_dir    : pages/
+site_dir    : site/
 out_dir      : out/
 templates_dir: templates/
 

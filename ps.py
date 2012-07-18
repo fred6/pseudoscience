@@ -9,9 +9,9 @@ f.close()
 
 
 def read_entries():
-    for ef in os.listdir(cfg['pages_dir']):
+    for ef in os.listdir(cfg['site_dir']):
         if ef.endswith(cfg['pages_ext']):
-            file = open(cfg['pages_dir']+ef, 'r')
+            file = open(cfg['site_dir']+ef, 'r')
             content = file.read()
             file.close()
 
