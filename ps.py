@@ -1,4 +1,4 @@
-import os, yaml, misaka
+import os, yaml, misaka, shutil, errno
 from sys import exit, argv
 from jinja2 import Environment, FileSystemLoader
 
@@ -6,6 +6,24 @@ from jinja2 import Environment, FileSystemLoader
 f = open('config.yaml', 'r')
 cfg = yaml.load(f.read())
 f.close()
+
+
+# http://stackoverflow.com/a/1994840
+def copyanything(src, dst):
+    try:
+        shutil.copytree(src, dst)
+    except OSError as exc: # python >2.5
+        if exc.errno == errno.ENOTDIR:
+            shutil.copy(src, dst)
+        else: raise
+
+def rmanything(thing):
+    try:
+        shutil.rmtree(thing)
+    except OSError as exc: # python >2.5
+        if exc.errno == errno.ENOTDIR:
+            os.remove(thing)
+        else: raise
 
 
 def read_entries():
@@ -17,6 +35,9 @@ def read_entries():
 
             yield {'name': ef[:ef.find(cfg['pages_ext'])],
                    'content': misaka.html(content, extensions=misaka.EXT_NO_INTRA_EMPHASIS)}
+        else:
+            rmanything(cfg['out_dir']+ef)
+            copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
 
 
 class TemplateRenderer():
