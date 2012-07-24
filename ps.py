@@ -58,6 +58,7 @@ class TemplateRenderer():
         self.tpl['layout'] = self.env.get_template('layout.tpl')
         self.tpl['page_content'] = self.env.get_template('page_content.tpl')
         self.tpl['index_content'] = self.env.get_template('index_content.tpl')
+        self.layout_vars = {}
 
     def clean_before_render(self):
         # make output directory if it doesnt exist
@@ -69,23 +70,22 @@ class TemplateRenderer():
             if f.endswith(".html"):
                 os.remove(cfg['out_dir']+f)
 
-    def create_layout_vars(self, page_tpl, page_vars, **kwargs):
+    def set_layout_vars(self, page_tpl, page_vars, **kwargs):
         if kwargs.get('page_name') != None:
             titlestr = ' - ' + kwargs['page_name']
         else
             titlestr = ''
 
-        return {
+        self.layout_vars = {
           'title': self.render_title(ch['name'])+titlestr,
           'content': self.tpl[page_tpl].render(page_vars)
         }
 
-    def write_file(self, file_name, layout_vars):
+    def write_file(self, file_name)
         fname = cfg['out_dir'] + file_name + '.html'
         f = open(fname, 'w')
-        f.write(self.tpl['layout'].render(lv))
+        f.write(self.tpl['layout'].render(self.layout_vars))
         f.close()
-
 
 
     def render_all(self):
@@ -94,16 +94,14 @@ class TemplateRenderer():
 
         # render chunk pages
         for ch in read_entries():
-            ent_vars = {'page': ch}
-            lv = self.create_layout_vars('page_content', ent_vars, page_name=ch['name'])
-            self.write_file(ch['name'], lv)
+            self.set_layout_vars('page_content', {'page': ch}, page_name=ch['name'])
+            self.write_file(ch['name'])
 
             pages.append({'name': ch['name']})
 
         # render index
-        index_vars = {'pages': pages}
-        lv = self.create_layout_vars('index_content', index_vars)
-        self.write_file('index', lv)
+        self.set_layout_vars('index_content', {'pages': pages})
+        self.write_file('index')
 
 
 
