@@ -80,6 +80,13 @@ class TemplateRenderer():
           'content': self.tpl[page_tpl].render(page_vars)
         }
 
+    def write_file(self, file_name, layout_vars):
+        fname = cfg['out_dir'] + file_name + '.html'
+        f = open(fname, 'w')
+        f.write(self.tpl['layout'].render(lv))
+        f.close()
+
+
 
     def render_all(self):
         self.clean_before_render()
@@ -89,22 +96,15 @@ class TemplateRenderer():
         for ch in read_entries():
             ent_vars = {'page': ch}
             lv = self.create_layout_vars('page_content', ent_vars, page_name=ch['name'])
-
-            fname = cfg['out_dir'] + ch['name'] + '.html'
-            f = open(fname, 'w')
-            f.write(self.tpl['layout'].render(lv))
-            f.close()
+            self.write_file(ch['name'], lv)
 
             pages.append({'name': ch['name']})
-
 
         # render index
         index_vars = {'pages': pages}
         lv = self.create_layout_vars('index_content', index_vars)
+        self.write_file('index', lv)
 
-        f = open(cfg['out_dir']+'index.html', 'w')
-        f.write(self.tpl['layout'].render(lv))
-        f.close()
 
 
 if __name__ == '__main__':
