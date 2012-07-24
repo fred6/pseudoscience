@@ -7,7 +7,6 @@ f = open('config.yaml', 'r')
 cfg = yaml.load(f.read())
 f.close()
 
-
     
 #http://nixtu.blogspot.com/2011/11/pandoc-markup-converter.html
 def convert(source, from_format, to_format):
@@ -37,20 +36,6 @@ def rmanything(thing):
         else: raise
 
 
-def read_entries():
-    for ef in os.listdir(cfg['site_dir']):
-        if ef.endswith(cfg['pages_ext']):
-            file = open(cfg['site_dir']+ef, 'r')
-            content = file.read()
-            file.close()
-
-            yield {'name': ef[:ef.find(cfg['pages_ext'])],
-                   'content': bytes.decode(convert(content, 'markdown', 'html'))}
-        else:
-            rmanything(cfg['out_dir']+ef)
-            copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
-
-
 class SiteCompiler():
     def __init__(self):
         self.env = Environment(loader=FileSystemLoader(cfg['templates_dir'], encoding='utf-8'))
@@ -65,10 +50,10 @@ class SiteCompiler():
         if not os.path.exists(cfg['out_dir']):
             os.makedirs(cfg['out_dir'])
 
-        # remove old html files
+        # clean out old files
         for f in os.listdir(cfg['out_dir']):
-            if f.endswith(".html"):
-                os.remove(cfg['out_dir']+f)
+            rmanything(cfg['out_dir']+f)
+
 
     def set_layout_vars(self, page_tpl, page_vars, **kwargs):
         if kwargs.get('page_name') != None:
@@ -87,22 +72,35 @@ class SiteCompiler():
         f.write(self.tpl['layout'].render(self.layout_vars))
         f.close()
 
+    def compile_page(self, fname):
+        file = open(cfg['site_dir']+ef, 'r')
+        content = file.read()
+        file.close()
+
+        pg = {'name': ef[:ef.find(cfg['pages_ext'])],
+              'content': bytes.decode(convert(content, 'markdown', 'html'))}
+
+        self.set_layout_vars('page_content', {'page': pg}, page_name=pg['name'])
+        self.write_file(pg['name'])
+
+        return pg['name']
+
 
     def compile(self):
         self.clean_up()
         pages = []
 
-        # render chunk pages
-        for ch in read_entries():
-            self.set_layout_vars('page_content', {'page': ch}, page_name=ch['name'])
-            self.write_file(ch['name'])
+        # read input directory
+        for ef in os.listdir(cfg['site_dir']):
+            if ef.endswith(cfg['pages_ext']):
+                page_info = self.compile_page(ef)
+                pages.append({'name': page_info})
+            else:
+                copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
 
-            pages.append({'name': ch['name']})
-
-        # render index
+        # compile index file
         self.set_layout_vars('index_content', {'pages': pages})
         self.write_file('index')
-
 
 
 if __name__ == '__main__':
