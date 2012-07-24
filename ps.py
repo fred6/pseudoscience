@@ -51,7 +51,7 @@ def read_entries():
             copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
 
 
-class TemplateRenderer():
+class SiteCompiler():
     def __init__(self):
         self.env = Environment(loader=FileSystemLoader(cfg['templates_dir'], encoding='utf-8'))
         self.tpl = {}
@@ -60,7 +60,7 @@ class TemplateRenderer():
         self.tpl['index_content'] = self.env.get_template('index_content.tpl')
         self.layout_vars = {}
 
-    def clean_before_render(self):
+    def clean_up(self):
         # make output directory if it doesnt exist
         if not os.path.exists(cfg['out_dir']):
             os.makedirs(cfg['out_dir'])
@@ -88,8 +88,8 @@ class TemplateRenderer():
         f.close()
 
 
-    def render_all(self):
-        self.clean_before_render()
+    def compile(self):
+        self.clean_up()
         pages = []
 
         # render chunk pages
@@ -107,7 +107,7 @@ class TemplateRenderer():
 
 if __name__ == '__main__':
     if len(argv) == 1:
-        tr = TemplateRenderer()
-        tr.render_all()
+        sc = SiteCompiler()
+        sc.clean_up()
     else:
         print("there's no arguments right now.")
