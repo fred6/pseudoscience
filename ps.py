@@ -1,4 +1,4 @@
-import os, yaml, misaka, shutil, errno
+import os, yaml, shutil, errno, subprocess
 from sys import exit, argv
 from jinja2 import Environment, FileSystemLoader
 
@@ -6,6 +6,17 @@ from jinja2 import Environment, FileSystemLoader
 f = open('config.yaml', 'r')
 cfg = yaml.load(f.read())
 f.close()
+
+
+    
+#http://nixtu.blogspot.com/2011/11/pandoc-markup-converter.html
+def convert(source, from_format, to_format):
+    # raises OSError if pandoc is not found!
+    # supported formats at http://johnmacfarlane.net/pandoc/
+    p = subprocess.Popen(['pandoc', '--from=' + from_format, '--to=' + to_format],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+    return p.communicate(bytes(source, 'UTF-8'))[0]
 
 
 # http://stackoverflow.com/a/1994840
@@ -34,7 +45,7 @@ def read_entries():
             file.close()
 
             yield {'name': ef[:ef.find(cfg['pages_ext'])],
-                   'content': misaka.html(content, extensions=misaka.EXT_NO_INTRA_EMPHASIS)}
+                   'content': bytes.decode(convert(content, 'markdown', 'html'))}
         else:
             rmanything(cfg['out_dir']+ef)
             copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
