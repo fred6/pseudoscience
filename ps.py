@@ -59,7 +59,7 @@ class TemplateRenderer():
         self.tpl['page_content'] = self.env.get_template('page_content.tpl')
         self.tpl['index_content'] = self.env.get_template('index_content.tpl')
 
-    def render_all(self):
+    def clean_before_render(self):
         # make output directory if it doesnt exist
         if not os.path.exists(cfg['out_dir']):
             os.makedirs(cfg['out_dir'])
@@ -69,6 +69,9 @@ class TemplateRenderer():
             if f.endswith(".html"):
                 os.remove(cfg['out_dir']+f)
 
+
+    def render_all(self):
+        clean_before_render()
         pages = []
 
         # render chunk pages
