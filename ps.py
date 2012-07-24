@@ -69,23 +69,30 @@ class TemplateRenderer():
             if f.endswith(".html"):
                 os.remove(cfg['out_dir']+f)
 
+    def create_layout_vars(self, page_tpl, page_vars, **kwargs):
+        if kwargs.get('page_name') != None:
+            titlestr = ' - ' + kwargs['page_name']
+        else
+            titlestr = ''
+
+        return {
+          'title': self.render_title(ch['name'])+titlestr,
+          'content': self.tpl[page_tpl].render(page_vars)
+        }
+
 
     def render_all(self):
-        clean_before_render()
+        self.clean_before_render()
         pages = []
 
         # render chunk pages
         for ch in read_entries():
             ent_vars = {'page': ch}
+            lv = self.create_layout_vars('page_content', ent_vars, page_name=ch['name'])
 
-            layout_vars = {
-              'title': cfg['site_title'] + ' - ' + ch['name'],
-              'content': self.tpl['page_content'].render(ent_vars)
-            }
-            
             fname = cfg['out_dir'] + ch['name'] + '.html'
             f = open(fname, 'w')
-            f.write(self.tpl['layout'].render(layout_vars))
+            f.write(self.tpl['layout'].render(lv))
             f.close()
 
             pages.append({'name': ch['name']})
@@ -93,13 +100,10 @@ class TemplateRenderer():
 
         # render index
         index_vars = {'pages': pages}
-        layout_vars = {
-          'title': cfg['site_title'],
-          'content': self.tpl['index_content'].render(index_vars)
-        }
-            
+        lv = self.create_layout_vars('index_content', index_vars)
+
         f = open(cfg['out_dir']+'index.html', 'w')
-        f.write(self.tpl['layout'].render(layout_vars))
+        f.write(self.tpl['layout'].render(lv))
         f.close()
 
 
