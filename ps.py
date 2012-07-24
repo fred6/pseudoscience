@@ -73,15 +73,15 @@ class TemplateRenderer():
     def set_layout_vars(self, page_tpl, page_vars, **kwargs):
         if kwargs.get('page_name') != None:
             titlestr = ' - ' + kwargs['page_name']
-        else
+        else:
             titlestr = ''
 
         self.layout_vars = {
-          'title': self.render_title(ch['name'])+titlestr,
+          'title': cfg['site_title']+titlestr,
           'content': self.tpl[page_tpl].render(page_vars)
         }
 
-    def write_file(self, file_name)
+    def write_file(self, file_name):
         fname = cfg['out_dir'] + file_name + '.html'
         f = open(fname, 'w')
         f.write(self.tpl['layout'].render(self.layout_vars))
