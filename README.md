@@ -22,4 +22,4 @@ Other dependencies include PyYAML and Jinja2:
  
 future stuff
 ------------
-I think I want to switch to mustache templates (pystache), but I tried to do this once and it definitely did not work. It escaped all my HTML after the first template render. Also the pystache documentation is non-existant. Sorry bros, thanks for the free software and all, but I'm not reading your source code to figure out how to use your library. I have *things to do*.
+I think I want to switch to mustache templates (pystache), but I tried to do this once and it definitely did not work. It escaped all my HTML after the first template render. Also the pystache documentation is non-existent. Sorry bros, thanks for the free software and all, but I'm not reading your source code to figure out how to use your library. I have *things to do*.
