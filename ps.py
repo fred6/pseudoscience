@@ -90,6 +90,27 @@ class SiteCompiler():
         self.LV = etree.ElementTree(root)
 
 
+    # do one level for now.
+    def _build_etree(self, data):
+        e = {}
+        root = data.keys()[0]
+        e[root] = etree.Element(root)
+
+        if isinstance(data[root], dict):
+            for k in data[root].keys():
+                e['sub_'+k] = etree.SubElement(e[root], k)
+                e['sub_'+k].text(data[root][k])
+
+        else:
+            # assume its a list
+            for i in data[root]:
+                curr_ele = i.keys()[0]
+                curr_val = i.values()[0]
+                e['sub_'+curr_ele] = etree.SubElement(e[root], curr_ele)
+                e['sub_'+curr_ele].text(curr_val)
+
+
+
     def _write_file(self, file_name):
         fname = cfg['out_dir'] + file_name + '.html'
         f = open(fname, 'w')
