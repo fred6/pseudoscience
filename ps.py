@@ -45,7 +45,7 @@ class SiteCompiler():
         self.tpl['index_content'] = self.env.get_template('index_content.tpl')
         self.layout_vars = {}
 
-    def clean_up(self):
+    def _clean_up(self):
         # make output directory if it doesnt exist
         if not os.path.exists(cfg['out_dir']):
             os.makedirs(cfg['out_dir'])
@@ -55,7 +55,7 @@ class SiteCompiler():
             rmanything(cfg['out_dir']+f)
 
 
-    def set_layout_vars(self, page_tpl, page_vars, **kwargs):
+    def _set_layout_vars(self, page_tpl, page_vars, **kwargs):
         if kwargs.get('page_name') != None:
             titlestr = ' - ' + kwargs['page_name']
         else:
@@ -66,13 +66,13 @@ class SiteCompiler():
           'content': self.tpl[page_tpl].render(page_vars)
         }
 
-    def write_file(self, file_name):
+    def _write_file(self, file_name):
         fname = cfg['out_dir'] + file_name + '.html'
         f = open(fname, 'w')
         f.write(self.tpl['layout'].render(self.layout_vars))
         f.close()
 
-    def compile_page(self, fname):
+    def _compile_page(self, fname):
         file = open(cfg['site_dir']+fname, 'r')
         content = file.read()
         file.close()
@@ -80,27 +80,27 @@ class SiteCompiler():
         pg = {'name': fname[:fname.find(cfg['pages_ext'])],
               'content': bytes.decode(convert(content, 'markdown', 'html'))}
 
-        self.set_layout_vars('page_content', {'page': pg}, page_name=pg['name'])
-        self.write_file(pg['name'])
+        self._set_layout_vars('page_content', {'page': pg}, page_name=pg['name'])
+        self._write_file(pg['name'])
 
         return pg['name']
 
 
     def compile(self):
-        self.clean_up()
+        self._clean_up()
         pages = []
 
         # read input directory
         for ef in os.listdir(cfg['site_dir']):
             if ef.endswith(cfg['pages_ext']):
-                page_info = self.compile_page(ef)
+                page_info = self._compile_page(ef)
                 pages.append({'name': page_info})
             else:
                 copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
 
         # compile index file
-        self.set_layout_vars('index_content', {'pages': pages})
-        self.write_file('index')
+        self._set_layout_vars('index_content', {'pages': pages})
+        self._write_file('index')
 
 
 if __name__ == '__main__':
