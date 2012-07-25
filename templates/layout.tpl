@@ -8,6 +8,6 @@
 <![endif]-->
 </head>
 <body>
-<h1 id="page_title"><a href="index.html">example site</a></h1>
+<h1 id="page_title"><a href="index.html">{{ title }}</a></h1>
 <div id="container">{{ content }}</div>
 </body></html>
