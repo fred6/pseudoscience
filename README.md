@@ -12,15 +12,14 @@ I doctored up some hack where I used the built-in _posts folder for jekyll, and 
 
 install
 -------
-After downloading this repo, you need to get pyyaml, jinja2, and misaka:
+First you need to get pandoc. Yap, that Haskell-based Markdown parser/generator. Why am I using Pandoc? Because all the Python-based Markdown parsers are atrocious.
+
+Other dependencies include PyYAML and Jinja2:
 
  - pip install pyyaml
  - pip install jinja2
- - pip install misaka
 
-you can probably do that in one command, though i've never tried!
  
 future stuff
 ------------
-I guess there's a distutils module or something in the python stdlib (I'm not super familiar with python), and it looks like lots of people use it. But apparently python 3.3 is deprecating it. so i think i'm going to wait on that before implementing. or just switch to python v3.3-only, maybe when the first beta is released.
-
+I think I want to switch to mustache templates (pystache), but I tried to do this once and it definitely did not work. It escaped all my HTML after the first template render. Also the pystache documentation is non-existant. Sorry bros, thanks for the free software and all, but I'm not reading your source code to figure out how to use your library. I have *things to do*.
