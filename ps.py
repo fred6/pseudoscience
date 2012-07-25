@@ -73,11 +73,11 @@ class SiteCompiler():
         f.close()
 
     def compile_page(self, fname):
-        file = open(cfg['site_dir']+ef, 'r')
+        file = open(cfg['site_dir']+fname, 'r')
         content = file.read()
         file.close()
 
-        pg = {'name': ef[:ef.find(cfg['pages_ext'])],
+        pg = {'name': fname[:fname.find(cfg['pages_ext'])],
               'content': bytes.decode(convert(content, 'markdown', 'html'))}
 
         self.set_layout_vars('page_content', {'page': pg}, page_name=pg['name'])
