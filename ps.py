@@ -106,6 +106,6 @@ class SiteCompiler():
 if __name__ == '__main__':
     if len(argv) == 1:
         sc = SiteCompiler()
-        sc.clean_up()
+        sc.compile()
     else:
         print("there's no arguments right now.")
