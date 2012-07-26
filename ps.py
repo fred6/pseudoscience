@@ -15,7 +15,7 @@ f.close()
 def convert(source, from_format, to_format):
     # raises OSError if pandoc is not found!
     # supported formats at http://johnmacfarlane.net/pandoc/
-    p = subprocess.Popen(['pandoc', '--from=' + from_format, '--to=' + to_format],
+    p = subprocess.Popen(['pandoc', '--from=' + from_format, '--to=' + to_format, '--mathjax'],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     return p.communicate(bytes(source, 'UTF-8'))[0]
