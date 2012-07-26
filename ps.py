@@ -49,17 +49,16 @@ def rmanything(thing):
 
 class SiteCompiler():
     def __init__(self):
-        self.env = Environment(loader=FileSystemLoader(cfg['templates_dir'], encoding='utf-8'))
-
         # each tpl entry is an lxml.etree.ElementTree
         tpl = {}
-        tpl['layout'] = etree.parse(cfg['templates_dir'] + 'layout.tpl')
-        tpl['page_content'] = etree.parse(cfg['templates_dir'] + 'page_content.tpl')
-        tpl['index_content'] = etree.parse(cfg['templates_dir'] + 'index_content.tpl')
+        tpl['layout'] = etree.parse(cfg['templates_dir'] + 'layout.xsl')
+        tpl['page_content'] = etree.parse(cfg['templates_dir'] + 'page_content.xsl')
+        tpl['index_content'] = etree.parse(cfg['templates_dir'] + 'index_content.xsl')
 
+        self.transform = {}
         self.transform['layout'] = etree.XSLT(tpl['layout'])
-        self.transform['index'] = etree.XSLT(tpl['index_content'])
-        self.transform['page'] = etree.XSLT(tpl['page_content'])
+        self.transform['index_content'] = etree.XSLT(tpl['index_content'])
+        self.transform['page_content'] = etree.XSLT(tpl['page_content'])
 
 
     def _clean_up(self):
@@ -75,6 +74,32 @@ class SiteCompiler():
     def runXSLT(self, transform_name, var_tree):
         return self.transform[transform_name](var_tree)
 
+
+    def _build_etree(self, data):
+        ele = self._build_etree_rec(data)
+        return etree.ElementTree(ele)
+
+
+    def _build_etree_rec(self, data):
+        # make a 'root' element out of the top-level dict key
+        ele, val = list(data.items())[0]
+        ele_etree = etree.Element(ele)
+
+        if isinstance(val, dict):
+            subele = self._build_etree_rec(val)
+            ele_etree.append(subele)
+        elif isinstance(val, str):
+            ele_etree.text = val
+        else:
+            # assume list
+            for sub in val:
+                subele = self._build_etree_rec(sub)
+                ele_etree.append(subele)
+
+        return ele_etree
+
+
+
     def _set_layout_vars(self, page_tpl, page_vars, **kwargs):
         if kwargs.get('page_name') != None:
             titlestr = ' - ' + kwargs['page_name']
@@ -84,30 +109,12 @@ class SiteCompiler():
         root = etree.Element('root')
         title = etree.SubElement(root, 'title')
         content = etree.SubElement(root, 'content')
-        title.text(cfg['site_title']+titlestr)
+        title.text = cfg['site_title']+titlestr
         # page_vars needs to be etree.ElementTree first.
-        content.text(str(self.runXSLT(page_tpl, page_vars)))
+        content.text = str(self.runXSLT(page_tpl, page_vars))
+        if page_tpl == 'index_content':
+            print(content.text)
         self.LV = etree.ElementTree(root)
-
-
-    # do one level for now.
-    def _build_etree(self, data):
-        e = {}
-        root = data.keys()[0]
-        e[root] = etree.Element(root)
-
-        if isinstance(data[root], dict):
-            for k in data[root].keys():
-                e['sub_'+k] = etree.SubElement(e[root], k)
-                e['sub_'+k].text(data[root][k])
-
-        else:
-            # assume its a list
-            for i in data[root]:
-                curr_ele = i.keys()[0]
-                curr_val = i.values()[0]
-                e['sub_'+curr_ele] = etree.SubElement(e[root], curr_ele)
-                e['sub_'+curr_ele].text(curr_val)
 
 
 
@@ -125,7 +132,9 @@ class SiteCompiler():
         pg = {'name': fname[:fname.find(cfg['pages_ext'])],
               'content': bytes.decode(convert(content, 'markdown', 'html'))}
 
-        self._set_layout_vars('page_content', {'page': pg}, page_name=pg['name'])
+        pgtree = self._build_etree({'page': pg})
+
+        self._set_layout_vars('page_content', pgtree, page_name=pg['name'])
         self._write_file(pg['name'])
 
         return pg['name']
@@ -139,12 +148,14 @@ class SiteCompiler():
         for ef in os.listdir(cfg['site_dir']):
             if ef.endswith(cfg['pages_ext']):
                 page_info = self._compile_page(ef)
-                pages.append({'name': page_info})
+                pages.append({'page': {'name': page_info}})
             else:
                 copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
 
         # compile index file
-        self._set_layout_vars('index_content', {'pages': pages})
+        indextree = self._build_etree({'pages': pages})
+        print(etree.tostring(indextree))
+        self._set_layout_vars('index_content', indextree)
         self._write_file('index')
 
 
