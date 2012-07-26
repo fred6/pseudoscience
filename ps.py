@@ -93,15 +93,15 @@ class SiteCompiler():
 
 
     def _set_layout_vars(self, page_tpl, page_vars, **kwargs):
-        if kwargs.get('page_name') != None:
-            titlestr = ' - ' + kwargs['page_name']
-        else:
-            titlestr = ''
-
         root = etree.Element('root')
-        title = etree.SubElement(root, 'title')
+        site_title = etree.SubElement(root, 'site_title')
+        site_title.text = cfg['site_title']
+
+        if kwargs.get('page_name') != None:
+            page_title = etree.SubElement(root, 'page_title')
+            page_title.text = kwargs['page_name']
+
         content = etree.SubElement(root, 'content')
-        title.text = cfg['site_title']+titlestr
 
         content_tpl_run = self.runXSLT(page_tpl, page_vars)
         contentroot = content_tpl_run.getroot()
