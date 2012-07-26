@@ -14,10 +14,7 @@ install
 -------
 First you need to get pandoc. Yap, that Haskell-based Markdown parser/generator. Why am I using Pandoc? Because all the Python-based Markdown parsers are atrocious.
 
-Other dependencies include PyYAML and Jinja2:
-
- - pip install pyyaml
- - pip install jinja2
+Thanks to the miracle  of XML technologies, the only other dependency you need is lxml. Ohhh yeahhh, XSLT web templating.
 
  
 future stuff
