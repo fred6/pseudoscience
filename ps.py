@@ -1,24 +1,16 @@
 from lxml import etree
-import os, yaml, shutil, errno, subprocess
+import os, shutil, errno, subprocess
 from sys import exit, argv
 
 # get config
-f = open('config.yaml', 'r')
-cfg = yaml.load(f.read())
+cfg = {}
+f = open('config.xml', 'r')
+cfg_ele = etree.XML(f.read())
+for var in list(cfg_ele):
+    cfg[var.tag] = var.text
 f.close()
 
-########
-# TODO #
-########
-# get rid of yaml. just use XML config
-# function for converting dictionaries and lists into xml files
-# dictionary key/value => element
-# list of dictionaries => repeated  element?
-# or should it be 'key': [list, list, list]
-# because otherwise how do you enforce that theyre the same
-# if you just do [{key: val}, {key: val}, {key, val}]
 
-    
 #http://nixtu.blogspot.com/2011/11/pandoc-markup-converter.html
 def convert(source, from_format, to_format):
     # raises OSError if pandoc is not found!
