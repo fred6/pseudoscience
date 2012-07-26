@@ -31,23 +31,23 @@
                 </xsl:comment>
             </head>
             <body>
-                <h1>
+                <div>
                     <xsl:attribute name="id">
-                        <xsl:value-of select="'page_title'"/>
+                        <xsl:value-of select="'container'"/>
                     </xsl:attribute>
-                    <a>
-                        <xsl:attribute name="href">
-                            <xsl:value-of select="'index.html'"/>
-                        </xsl:attribute>
-                        <xsl:value-of select="/root/title"/>
-                    </a>
-                </h1>
-                    <div>
+                    <h1>
                         <xsl:attribute name="id">
-                            <xsl:value-of select="'container'"/>
+                            <xsl:value-of select="'page_title'"/>
                         </xsl:attribute>
-                        <xsl:copy-of select="/root/content/*"/>
-                    </div>
+                        <a>
+                            <xsl:attribute name="href">
+                                <xsl:value-of select="'index.html'"/>
+                            </xsl:attribute>
+                            <xsl:value-of select="/root/title"/>
+                        </a>
+                    </h1>
+                    <xsl:copy-of select="/root/content/*"/>
+                </div>
             </body>
 
         </html>
