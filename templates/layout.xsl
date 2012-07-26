@@ -45,7 +45,7 @@
                             </xsl:attribute>
                             <xsl:value-of select="/root/site_title"/>
                         </a>
-                        <xsl:if test="exists(/root/page_title)">
+                        <xsl:if test="/root/page_title">
                             <xsl:value-of select="concat(' - ', /root/page_title)"/>
                         </xsl:if>
                     </h1>
