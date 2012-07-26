@@ -110,10 +110,11 @@ class SiteCompiler():
         title = etree.SubElement(root, 'title')
         content = etree.SubElement(root, 'content')
         title.text = cfg['site_title']+titlestr
-        # page_vars needs to be etree.ElementTree first.
-        content.text = str(self.runXSLT(page_tpl, page_vars))
-        if page_tpl == 'index_content':
-            print(content.text)
+
+        content_tpl_run = self.runXSLT(page_tpl, page_vars)
+        contentroot = content_tpl_run.getroot()
+        contentsub = content.append(content_tpl_run.getroot())
+
         self.LV = etree.ElementTree(root)
 
 
@@ -154,7 +155,6 @@ class SiteCompiler():
 
         # compile index file
         indextree = self._build_etree({'pages': pages})
-        print(etree.tostring(indextree))
         self._set_layout_vars('index_content', indextree)
         self._write_file('index')
 

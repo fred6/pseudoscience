@@ -7,10 +7,10 @@
                 <xsl:value-of select="'page'"/>
             </xsl:attribute>
             <header>
-                <xsl:value-of select="page/name"/>
+                <xsl:value-of select="/page/name"/>
             </header>
             <div>
-                <xsl:value-of select="page/content"/>
+                <xsl:value-of disable-output-escaping="yes" select="/page/content"/>
             </div>
         </div>
     </xsl:template>
