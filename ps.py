@@ -12,23 +12,20 @@ for var in list(cfg_ele):
     cfg[var.tag] = var.text
 f.close()
 
+# create transforms
+# each tpl is an lxml.etree.ElementTree
+transform = {}
+for tplname in ['layout', 'page_content', 'index_content']:
+    tpl = etree.parse(cfg['templates_dir'] + tplname + '.xsl')
+    transform[tplname] = etree.XSLT(tpl)
+
 
 class SiteCompiler():
     def __init__(self):
-        # each tpl entry is an lxml.etree.ElementTree
-        tpl = {}
-        tpl['layout'] = etree.parse(cfg['templates_dir'] + 'layout.xsl')
-        tpl['page_content'] = etree.parse(cfg['templates_dir'] + 'page_content.xsl')
-        tpl['index_content'] = etree.parse(cfg['templates_dir'] + 'index_content.xsl')
-
-        self.transform = {}
-        self.transform['layout'] = etree.XSLT(tpl['layout'])
-        self.transform['index_content'] = etree.XSLT(tpl['index_content'])
-        self.transform['page_content'] = etree.XSLT(tpl['page_content'])
-
+        pass
 
     def runXSLT(self, transform_name, var_tree):
-        return self.transform[transform_name](var_tree)
+        return transform[transform_name](var_tree)
 
 
     def _build_etree(self, data):
