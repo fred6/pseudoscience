@@ -1,6 +1,8 @@
 from lxml import etree
-import os, shutil, errno, subprocess
+import os
 from sys import exit, argv
+
+import util
 
 # get config
 cfg = {}
@@ -9,34 +11,6 @@ cfg_ele = etree.XML(f.read())
 for var in list(cfg_ele):
     cfg[var.tag] = var.text
 f.close()
-
-
-#http://nixtu.blogspot.com/2011/11/pandoc-markup-converter.html
-def convert(source, from_format, to_format):
-    # raises OSError if pandoc is not found!
-    # supported formats at http://johnmacfarlane.net/pandoc/
-    p = subprocess.Popen(['pandoc', '--from=' + from_format, '--to=' + to_format, '--mathjax'],
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-
-    return p.communicate(bytes(source, 'UTF-8'))[0]
-
-
-# http://stackoverflow.com/a/1994840
-def copyanything(src, dst):
-    try:
-        shutil.copytree(src, dst)
-    except OSError as exc: # python >2.5
-        if exc.errno == errno.ENOTDIR:
-            shutil.copy(src, dst)
-        else: raise
-
-def rmanything(thing):
-    try:
-        shutil.rmtree(thing)
-    except OSError as exc: # python >2.5
-        if exc.errno == errno.ENOTDIR:
-            os.remove(thing)
-        else: raise
 
 
 class SiteCompiler():
@@ -51,16 +25,6 @@ class SiteCompiler():
         self.transform['layout'] = etree.XSLT(tpl['layout'])
         self.transform['index_content'] = etree.XSLT(tpl['index_content'])
         self.transform['page_content'] = etree.XSLT(tpl['page_content'])
-
-
-    def _clean_up(self):
-        # make output directory if it doesnt exist
-        if not os.path.exists(cfg['out_dir']):
-            os.makedirs(cfg['out_dir'])
-
-        # clean out old files
-        for f in os.listdir(cfg['out_dir']):
-            rmanything(cfg['out_dir']+f)
 
 
     def runXSLT(self, transform_name, var_tree):
@@ -134,7 +98,7 @@ class SiteCompiler():
 
 
     def compile(self):
-        self._clean_up()
+        clean_up(cfg['out_dir'])
         pages = []
 
         # read input directory
