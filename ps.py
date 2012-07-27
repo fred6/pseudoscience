@@ -88,6 +88,11 @@ def compile_page(fname):
 
     return pg['name']
 
+def compile_index(pages_dict):
+    indextree = build_etree(pages_dict)
+    LV = make_layout_vars('index_content', indextree)
+    write_file('index', LV)
+
 
 def compile_site():
     clean_up(cfg['out_dir'])
@@ -101,10 +106,7 @@ def compile_site():
         else:
             copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
 
-    # compile index file
-    indextree = build_etree({'pages': pages})
-    LV = make_layout_vars('index_content', indextree)
-    write_file('index', LV)
+    compile_index({'pages': pages})
 
 
 if __name__ == '__main__':
