@@ -47,6 +47,7 @@ def build_etree_rec(data):
 def runXSLT(transform_name, var_tree):
     return transform[transform_name](var_tree)
 
+
 def write_file(file_name, LV):
     fname = cfg['out_dir'] + file_name + '.html'
     f = open(fname, 'w')
@@ -54,66 +55,60 @@ def write_file(file_name, LV):
     f.close()
 
 
+def make_layout_vars(page_tpl, page_vars, **kwargs):
+    root = etree.Element('root')
+    site_title = etree.SubElement(root, 'site_title')
+    site_title.text = cfg['site_title']
 
-class SiteCompiler():
-    def __init__(self):
-        pass
+    if kwargs.get('page_name') != None:
+        page_title = etree.SubElement(root, 'page_title')
+        page_title.text = kwargs['page_name']
 
-    def _set_layout_vars(self, page_tpl, page_vars, **kwargs):
-        root = etree.Element('root')
-        site_title = etree.SubElement(root, 'site_title')
-        site_title.text = cfg['site_title']
+    content = etree.SubElement(root, 'content')
 
-        if kwargs.get('page_name') != None:
-            page_title = etree.SubElement(root, 'page_title')
-            page_title.text = kwargs['page_name']
+    content_tpl_run = runXSLT(page_tpl, page_vars)
+    contentroot = content_tpl_run.getroot()
+    contentsub = content.append(content_tpl_run.getroot())
 
-        content = etree.SubElement(root, 'content')
-
-        content_tpl_run = runXSLT(page_tpl, page_vars)
-        contentroot = content_tpl_run.getroot()
-        contentsub = content.append(content_tpl_run.getroot())
-
-        return etree.ElementTree(root)
+    return etree.ElementTree(root)
 
 
-    def _compile_page(self, fname):
-        file = open(cfg['site_dir']+fname, 'r')
-        content = file.read()
-        file.close()
+def compile_page(fname):
+    file = open(cfg['site_dir']+fname, 'r')
+    content = file.read()
+    file.close()
 
-        pg = {'name': fname[:fname.find(cfg['pages_ext'])],
-              'content': bytes.decode(convert(content, 'markdown', 'html'))}
+    pg = {'name': fname[:fname.find(cfg['pages_ext'])],
+          'content': bytes.decode(convert(content, 'markdown', 'html'))}
 
-        pgtree = build_etree({'page': pg})
+    pgtree = build_etree({'page': pg})
 
-        LV = self._set_layout_vars('page_content', pgtree, page_name=pg['name'])
-        write_file(pg['name'], LV)
+    LV = make_layout_vars('page_content', pgtree, page_name=pg['name'])
+    write_file(pg['name'], LV)
 
-        return pg['name']
+    return pg['name']
 
 
-    def compile(self):
-        clean_up(cfg['out_dir'])
-        pages = []
+def compile_site():
+    clean_up(cfg['out_dir'])
+    pages = []
 
-        # read input directory
-        for ef in os.listdir(cfg['site_dir']):
-            if ef.endswith(cfg['pages_ext']):
-                page_info = self._compile_page(ef)
-                pages.append({'page': {'name': page_info}})
-            else:
-                copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
+    # read input directory
+    for ef in os.listdir(cfg['site_dir']):
+        if ef.endswith(cfg['pages_ext']):
+            page_info = compile_page(ef)
+            pages.append({'page': {'name': page_info}})
+        else:
+            copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
 
-        # compile index file
-        indextree = build_etree({'pages': pages})
-        LV = self._set_layout_vars('index_content', indextree)
-        write_file('index', LV)
+    # compile index file
+    indextree = build_etree({'pages': pages})
+    LV = make_layout_vars('index_content', indextree)
+    write_file('index', LV)
 
 
 if __name__ == '__main__':
     if len(argv) == 1:
-        sc = SiteCompiler()
-        sc.compile()
+        compile_site()
     else:
         print("there's no arguments right now.")
