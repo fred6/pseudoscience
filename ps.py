@@ -47,6 +47,13 @@ def build_etree_rec(data):
 def runXSLT(transform_name, var_tree):
     return transform[transform_name](var_tree)
 
+def write_file(file_name, LV):
+    fname = cfg['out_dir'] + file_name + '.html'
+    f = open(fname, 'w')
+    f.write(str(runXSLT('layout', LV)))
+    f.close()
+
+
 
 class SiteCompiler():
     def __init__(self):
@@ -67,15 +74,8 @@ class SiteCompiler():
         contentroot = content_tpl_run.getroot()
         contentsub = content.append(content_tpl_run.getroot())
 
-        self.LV = etree.ElementTree(root)
+        return etree.ElementTree(root)
 
-
-
-    def _write_file(self, file_name):
-        fname = cfg['out_dir'] + file_name + '.html'
-        f = open(fname, 'w')
-        f.write(str(runXSLT('layout', self.LV)))
-        f.close()
 
     def _compile_page(self, fname):
         file = open(cfg['site_dir']+fname, 'r')
@@ -87,8 +87,8 @@ class SiteCompiler():
 
         pgtree = build_etree({'page': pg})
 
-        self._set_layout_vars('page_content', pgtree, page_name=pg['name'])
-        self._write_file(pg['name'])
+        LV = self._set_layout_vars('page_content', pgtree, page_name=pg['name'])
+        write_file(pg['name'], LV)
 
         return pg['name']
 
@@ -107,8 +107,8 @@ class SiteCompiler():
 
         # compile index file
         indextree = build_etree({'pages': pages})
-        self._set_layout_vars('index_content', indextree)
-        self._write_file('index')
+        LV = self._set_layout_vars('index_content', indextree)
+        write_file('index', LV)
 
 
 if __name__ == '__main__':
