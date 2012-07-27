@@ -20,38 +20,37 @@ for tplname in ['layout', 'page_content', 'index_content']:
     transform[tplname] = etree.XSLT(tpl)
 
 
+def build_etree(data):
+    ele = build_etree_rec(data)
+    return etree.ElementTree(ele)
+
+
+def build_etree_rec(data):
+    # make a 'root' element out of the top-level dict key
+    ele, val = list(data.items())[0]
+    ele_etree = etree.Element(ele)
+
+    if isinstance(val, dict):
+        subele = build_etree_rec(val)
+        ele_etree.append(subele)
+    elif isinstance(val, str):
+        ele_etree.text = val
+    else:
+        # assume list
+        for sub in val:
+            subele = build_etree_rec(sub)
+            ele_etree.append(subele)
+
+    return ele_etree
+
+
+def runXSLT(transform_name, var_tree):
+    return transform[transform_name](var_tree)
+
+
 class SiteCompiler():
     def __init__(self):
         pass
-
-    def runXSLT(self, transform_name, var_tree):
-        return transform[transform_name](var_tree)
-
-
-    def _build_etree(self, data):
-        ele = self._build_etree_rec(data)
-        return etree.ElementTree(ele)
-
-
-    def _build_etree_rec(self, data):
-        # make a 'root' element out of the top-level dict key
-        ele, val = list(data.items())[0]
-        ele_etree = etree.Element(ele)
-
-        if isinstance(val, dict):
-            subele = self._build_etree_rec(val)
-            ele_etree.append(subele)
-        elif isinstance(val, str):
-            ele_etree.text = val
-        else:
-            # assume list
-            for sub in val:
-                subele = self._build_etree_rec(sub)
-                ele_etree.append(subele)
-
-        return ele_etree
-
-
 
     def _set_layout_vars(self, page_tpl, page_vars, **kwargs):
         root = etree.Element('root')
@@ -64,7 +63,7 @@ class SiteCompiler():
 
         content = etree.SubElement(root, 'content')
 
-        content_tpl_run = self.runXSLT(page_tpl, page_vars)
+        content_tpl_run = runXSLT(page_tpl, page_vars)
         contentroot = content_tpl_run.getroot()
         contentsub = content.append(content_tpl_run.getroot())
 
@@ -75,7 +74,7 @@ class SiteCompiler():
     def _write_file(self, file_name):
         fname = cfg['out_dir'] + file_name + '.html'
         f = open(fname, 'w')
-        f.write(str(self.runXSLT('layout', self.LV)))
+        f.write(str(runXSLT('layout', self.LV)))
         f.close()
 
     def _compile_page(self, fname):
@@ -86,7 +85,7 @@ class SiteCompiler():
         pg = {'name': fname[:fname.find(cfg['pages_ext'])],
               'content': bytes.decode(convert(content, 'markdown', 'html'))}
 
-        pgtree = self._build_etree({'page': pg})
+        pgtree = build_etree({'page': pg})
 
         self._set_layout_vars('page_content', pgtree, page_name=pg['name'])
         self._write_file(pg['name'])
@@ -107,7 +106,7 @@ class SiteCompiler():
                 copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
 
         # compile index file
-        indextree = self._build_etree({'pages': pages})
+        indextree = build_etree({'pages': pages})
         self._set_layout_vars('index_content', indextree)
         self._write_file('index')
 
