@@ -30,7 +30,7 @@ def rmanything(thing):
 
 def clean_up(folder):
     # make output directory if it doesnt exist
-    if not os.path.exists(folder)
+    if not os.path.exists(folder):
         os.makedirs(folder)
 
     # clean out old files

@@ -2,7 +2,7 @@ from lxml import etree
 import os
 from sys import exit, argv
 
-import util
+from util import *
 
 # get config
 cfg = {}
