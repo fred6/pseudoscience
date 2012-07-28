@@ -118,7 +118,10 @@ def compile_site():
 
         print(this_in_folder)
 
-        pages = [{'page': {'name': pgname_from_fname(f)}} for f in o[2] if f.endswith(cfg['pages_ext'])]
+        pages = [{'page': 
+                    {'name': pgname_from_fname(f),
+                     'path': this_folder}
+                 } for f in o[2] if f.endswith(cfg['pages_ext'])]
 
         if this_in_folder == cfg['site_dir']:
             index_vars['pages'] = pages
