@@ -108,18 +108,30 @@ def compile_site():
     # trailingslashify
     tsify = lambda x: x+'/' if x[len(x)-1] != '/' else x
 
-    # read input directory
+    index_vars = {}
     for o in os.walk(cfg['site_dir']):
         this_in_folder = tsify(o[0])
-        this_folder = this_in_folder.replace(cfg['site_dir'], '')
         this_out_folder = this_in_folder.replace(cfg['site_dir'], cfg['out_dir'])
+        this_folder = this_in_folder.replace(cfg['site_dir'], '')
 
         prep_folder(this_out_folder)
 
         print(this_in_folder)
 
+        pages = [{'page': {'name': pgname_from_fname(f)}} for f in o[2] if f.endswith(cfg['pages_ext'])]
+
         if this_in_folder == cfg['site_dir']:
-            pages = [{'page': {'name': pgname_from_fname(f)}} for f in o[2] if ef.endswith(cfg['pages_ext'])]
+            index_vars['pages'] = pages
+        else:
+            this_folder_no_ts = this_folder[:this_folder.find('/')]
+            path_list = this_folder_no_ts.split('/')
+
+            dict_acc = index_vars
+            for p in path_list[:len(path_list)-1]:
+                dict_acc = dict_acc[p]
+
+            dict_acc[this_folder_no_ts] = {'pages': pages}
+
 
         for ef in o[2]:
             print('    '+ef)
@@ -129,7 +141,8 @@ def compile_site():
                 copyanything(this_in_folder+ef, this_out_folder+ef)
 
 
-    compile_index({'pages': pages})
+    print(index_vars)
+    compile_index(index_vars)
 
 
 if __name__ == '__main__':
