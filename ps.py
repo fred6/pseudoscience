@@ -55,14 +55,14 @@ def write_file(file_name, LV):
     f.close()
 
 
-def make_layout_vars(page_tpl, page_vars, **kwargs):
+def make_layout_vars(page_tpl, page_vars, page_name):
     root = etree.Element('root')
     site_title = etree.SubElement(root, 'site_title')
     site_title.text = cfg['site_title']
 
-    if kwargs.get('page_name') != None:
+    if page_name != 'index':
         page_title = etree.SubElement(root, 'page_title')
-        page_title.text = kwargs['page_name']
+        page_title.text = page_name
 
     content = etree.SubElement(root, 'content')
 
@@ -73,6 +73,12 @@ def make_layout_vars(page_tpl, page_vars, **kwargs):
     return etree.ElementTree(root)
 
 
+def write_file_from_dict(vardict, tplname, page_name):
+    vartree = build_etree(vardict)
+    LV = make_layout_vars(tplname, vartree, page_name)
+    write_file(page_name, LV)
+
+
 def compile_page(fname):
     file = open(cfg['site_dir']+fname, 'r')
     content = file.read()
@@ -81,17 +87,12 @@ def compile_page(fname):
     pg = {'name': fname[:fname.find(cfg['pages_ext'])],
           'content': bytes.decode(convert(content, 'markdown', 'html'))}
 
-    pgtree = build_etree({'page': pg})
-
-    LV = make_layout_vars('page_content', pgtree, page_name=pg['name'])
-    write_file(pg['name'], LV)
-
+    write_file_from_dict({'page': pg}, 'page_content', pg['name'])
     return pg['name']
 
+
 def compile_index(pages_dict):
-    indextree = build_etree(pages_dict)
-    LV = make_layout_vars('index_content', indextree)
-    write_file('index', LV)
+    write_file_from_dict(pages_dict, 'index_content', 'index')
 
 
 def compile_site():
