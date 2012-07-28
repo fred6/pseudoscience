@@ -141,8 +141,7 @@ def compile_site():
                 copyanything(this_in_folder+ef, this_out_folder+ef)
 
 
-    print(index_vars)
-    compile_index(index_vars)
+    compile_index({'root': index_vars})
 
 
 if __name__ == '__main__':
