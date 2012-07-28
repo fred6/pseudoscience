@@ -28,16 +28,8 @@ def build_etree_rec(data):
     # make a 'root' element out of the top-level dict key
     listify = list(data.items())
 
-    print('@@@@@@@@@@@@@@@@@@@@@@@@@@ IN BUILD_ETREE_REC: LISTIFY @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-    print(listify)
-    print('@@@@@@@@@@@@@@@@@@@@@@@@@@ IN BUILD_ETREE_REC: END LISTIFY @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
     if listify != []:
         for ele, val in listify:
-            print('@@@@@@@@@@@@@@@@@@@@@@@@@@ IN BUILD_ETREE_REC: inside for ELE/val @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-            print(ele)
-            print(val)
-            print('@@@@@@@@@@@@@@@@@@@@@@@@@@ IN BUILD_ETREE_REC: inside for ELE/val AFTER! @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-
             ele, val = listify[0]
             ele_root = etree.Element(ele)
 
@@ -55,31 +47,21 @@ def build_etree_rec(data):
                     subele = build_etree_rec(sub)
                     ele_root.append(subele)
 
-        print('@@@@@@@@@@@@@@@@@@@@@@@@@@ IN BUILD_ETREE_REC: ELE_ROOT @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-        print(etree.tostring(ele_root))
-
         return ele_root
 
     else:
         return None
 
 
-def build_layout_tree(content_tree, page_title):
+def make_layout_vars(content_tree, page_title):
     lv = {}
+    lv['site_title'] = cfg['site_title']
+    lv['content'] = {}
 
     if page_title != 'index':
         lv['page_title'] = page_title
 
-    lv['site_title'] = cfg['site_title']
-    lv['content'] = {}
-
     tree = build_etree({'root': lv})
-
-    if page_title == 'TODO':
-        print('$$$$$$$$$$$$$$$$$$$$$$$$$')
-        print(etree.tostring(tree))
-        print(str(content_tree))
-        print('$$$$$$$$$$$$$$$$$$$$$$$$$')
 
     root_ele = tree.getroot()
     content_ele = root_ele.find('content')
@@ -89,37 +71,18 @@ def build_layout_tree(content_tree, page_title):
     return etree.ElementTree(root_ele)
 
 
-def write_file_from_dict(tplname, vdict, page_title):
-    if page_title == 'TODO':
-        print('@@@@@@@@@@@@@@@@@@@@@@@@@@ VDICT @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-        print(vdict)
-
-    bev = build_etree(vdict)
-
-    if page_title == 'TODO':
-        print('@@@@@@@@@@@@@@@@@@@@@@@@@@ BUILD ETREE VDICT @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-        print(etree.tostring(bev))
-
-    result_tree = transform[tplname](bev)
-
-    if page_title == 'TODO':
-        print('@@@@@@@@@@@@@@@@@@@@@@@@@@ RESULT_TREE @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-        print(str(result_tree))
-
-    final_result_tree = transform['layout'](build_layout_tree(result_tree, page_title))
-
-    if page_title == 'TODO':
-        print('@@@@@@@@@@@@@@@@@@@@@@@@@@ FINAL_RESULT_TREE @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-        print(str(final_result_tree))
-
-    write_file_from_result_tree(page_title, final_result_tree)
+def write_file_from_dict(vardict, tplname, page_name):
+    vartree = build_etree(vardict)
+    result_tree = transform[tplname](vartree)
+    LV = make_layout_vars(result_tree, page_name)
+    write_file_from_result_tree(page_name, LV)
 
 
-def write_file_from_result_tree(file_name, result_tree):
+def write_file_from_result_tree(file_name, LV):
     fname = cfg['out_dir'] + file_name + '.html'
 
     f = open(fname, 'w')
-    f.write(str(result_tree))
+    f.write(str(transform['layout'](LV)))
     f.close()
 
 
@@ -128,16 +91,15 @@ def compile_page(fname):
     content = file.read()
     file.close()
 
-    pgvars = {'name': fname[:fname.find(cfg['pages_ext'])],
-              'content': bytes.decode(convert(content, 'markdown', 'html'))}
+    pg = {'name': fname[:fname.find(cfg['pages_ext'])],
+          'content': bytes.decode(convert(content, 'markdown', 'html'))}
 
-    write_file_from_dict('page_content', pgvars, pgvars['name'])
-
-    return pgvars['name']
+    write_file_from_dict({'page': pg}, 'page_content', pg['name'])
+    return pg['name']
 
 
 def compile_index(pages_dict):
-    write_file_from_dict('index_content', pages_dict, 'index')
+    write_file_from_dict(pages_dict, 'index_content', 'index')
 
 
 def compile_site():
