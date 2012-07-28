@@ -25,7 +25,6 @@ def build_etree(data):
 
 
 def build_etree_rec(data):
-    # make a 'root' element out of the top-level dict key
     listify = list(data.items())
 
     if listify != []:
