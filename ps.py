@@ -48,13 +48,6 @@ def runXSLT(transform_name, var_tree):
     return transform[transform_name](var_tree)
 
 
-def write_file(file_name, LV):
-    fname = cfg['out_dir'] + file_name + '.html'
-    f = open(fname, 'w')
-    f.write(str(runXSLT('layout', LV)))
-    f.close()
-
-
 def make_layout_vars(page_tpl, page_vars, page_name):
     root = etree.Element('root')
     site_title = etree.SubElement(root, 'site_title')
@@ -76,7 +69,15 @@ def make_layout_vars(page_tpl, page_vars, page_name):
 def write_file_from_dict(vardict, tplname, page_name):
     vartree = build_etree(vardict)
     LV = make_layout_vars(tplname, vartree, page_name)
-    write_file(page_name, LV)
+    write_file_from_LV(page_name, LV)
+
+
+def write_file_from_LV(file_name, LV):
+    fname = cfg['out_dir'] + file_name + '.html'
+
+    f = open(fname, 'w')
+    f.write(str(runXSLT('layout', LV)))
+    f.close()
 
 
 def compile_page(fname):
