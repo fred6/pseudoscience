@@ -1,7 +1,6 @@
 from lxml import etree
-import os
 from sys import exit, argv
-
+import os
 from util import *
 
 # get config
@@ -12,12 +11,12 @@ for var in list(cfg_ele):
     cfg[var.tag] = var.text
 f.close()
 
-# create transforms
-# each tpl is an lxml.etree.ElementTree
+
+# set up transforms
 transform = {}
-for tplname in ['layout', 'page_content', 'index_content']:
-    tpl = etree.parse(cfg['templates_dir'] + tplname + '.xsl')
-    transform[tplname] = etree.XSLT(tpl)
+for tr_name in ['layout', 'index_content', 'page_content']:
+    tpl = etree.parse(cfg['templates_dir'] + tr_name + '.xsl')
+    transform[tr_name] = etree.XSLT(tpl)
 
 
 def build_etree(data):
@@ -27,54 +26,63 @@ def build_etree(data):
 
 def build_etree_rec(data):
     # make a 'root' element out of the top-level dict key
-    ele, val = list(data.items())[0]
-    ele_etree = etree.Element(ele)
+    listify = list(data.items())
 
-    if isinstance(val, dict):
-        subele = build_etree_rec(val)
-        ele_etree.append(subele)
-    elif isinstance(val, str):
-        ele_etree.text = val
+    if listify != []:
+        for ele, val in listify:
+            ele, val = listify[0]
+            ele_root = etree.Element(ele)
+
+            if isinstance(val, dict):
+                for e,v in val.items():
+                    subele = build_etree_rec({e: v})
+
+                    if subele is not None:
+                        ele_root.append(subele)
+            elif isinstance(val, str):
+                ele_root.text = val
+            else:
+                # assume list
+                for sub in val:
+                    subele = build_etree_rec(sub)
+                    ele_root.append(subele)
+
+        return ele_root
+
     else:
-        # assume list
-        for sub in val:
-            subele = build_etree_rec(sub)
-            ele_etree.append(subele)
-
-    return ele_etree
+        return None
 
 
-def runXSLT(transform_name, var_tree):
-    return transform[transform_name](var_tree)
+def make_layout_vars(content_tree, page_title):
+    lv = {}
+    lv['site_title'] = cfg['site_title']
+    lv['content'] = {}
 
+    if page_title != 'index':
+        lv['page_title'] = page_title
 
-def make_layout_vars(content_tree, page_name):
-    root = etree.Element('root')
-    site_title = etree.SubElement(root, 'site_title')
-    site_title.text = cfg['site_title']
+    tree = build_etree({'root': lv})
 
-    if page_name != 'index':
-        page_title = etree.SubElement(root, 'page_title')
-        page_title.text = page_name
-
-    content = etree.SubElement(root, 'content')
-    content.append(content_tree.getroot())
-
-    return etree.ElementTree(root)
+    root_ele = tree.getroot()
+    content_ele = root_ele.find('content')
+    content_ele.append(content_tree.getroot())
+    
+    # return ElementTree
+    return etree.ElementTree(root_ele)
 
 
 def write_file_from_dict(vardict, tplname, page_name):
     vartree = build_etree(vardict)
-    result_tree = runXSLT(tplname, vartree)
+    result_tree = transform[tplname](vartree)
     LV = make_layout_vars(result_tree, page_name)
-    write_file_from_LV(page_name, LV)
+    write_file_from_result_tree(page_name, LV)
 
 
-def write_file_from_LV(file_name, LV):
+def write_file_from_result_tree(file_name, LV):
     fname = cfg['out_dir'] + file_name + '.html'
 
     f = open(fname, 'w')
-    f.write(str(runXSLT('layout', LV)))
+    f.write(str(transform['layout'](LV)))
     f.close()
 
 
