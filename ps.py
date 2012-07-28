@@ -56,9 +56,10 @@ def build_etree_rec(data):
         return None
 
 
-def make_layout_vars(content_tree, page_title):
+def make_layout_vars(content_tree, page_title, page_path):
     lv = {}
     lv['page_title'] = page_title
+    lv['page_path'] = page_path
     lv['site_title'] = cfg['site_title']
     lv['content'] = {}
 
@@ -75,7 +76,7 @@ def make_layout_vars(content_tree, page_title):
 def write_file_from_dict(vardict, tplname, page_name, folder):
     vartree = build_etree(vardict)
     result_tree = transform[tplname](vartree)
-    LV = make_layout_vars(result_tree, page_name)
+    LV = make_layout_vars(result_tree, page_name, folder)
     write_file_from_result_tree(page_name, folder, LV)
 
 
