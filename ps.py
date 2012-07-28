@@ -18,6 +18,10 @@ for tr_name in ['layout', 'index_content', 'page_content']:
     tpl = etree.parse(cfg['templates_dir'] + tr_name + '.xsl')
     transform[tr_name] = etree.XSLT(tpl)
 
+    
+# chop off the markdown file extension
+pgname_from_fname = lambda f: f[:f.find(cfg['pages_ext'])]
+
 
 def build_etree(data):
     ele = build_etree_rec(data)
@@ -70,48 +74,60 @@ def make_layout_vars(content_tree, page_title):
     return etree.ElementTree(root_ele)
 
 
-def write_file_from_dict(vardict, tplname, page_name):
+def write_file_from_dict(vardict, tplname, page_name, folder):
     vartree = build_etree(vardict)
     result_tree = transform[tplname](vartree)
     LV = make_layout_vars(result_tree, page_name)
-    write_file_from_result_tree(page_name, LV)
+    write_file_from_result_tree(page_name, folder, LV)
 
 
-def write_file_from_result_tree(file_name, LV):
-    fname = cfg['out_dir'] + file_name + '.html'
+def write_file_from_result_tree(file_name, folder, LV):
+    fname = cfg['out_dir'] + folder + file_name + '.html'
 
     f = open(fname, 'w')
     f.write(str(transform['layout'](LV)))
     f.close()
 
 
-def compile_page(fname):
-    file = open(cfg['site_dir']+fname, 'r')
+def compile_page(fname, folder):
+    file = open(cfg['site_dir']+folder+fname, 'r')
     content = file.read()
     file.close()
 
-    pg = {'name': fname[:fname.find(cfg['pages_ext'])],
+    pg = {'name': pgname_from_fname(fname),
           'content': bytes.decode(convert(content, 'markdown', 'html'))}
 
-    write_file_from_dict({'page': pg}, 'page_content', pg['name'])
-    return pg['name']
+    write_file_from_dict({'page': pg}, 'page_content', pg['name'], folder)
 
 
 def compile_index(pages_dict):
-    write_file_from_dict(pages_dict, 'index_content', 'index')
+    write_file_from_dict(pages_dict, 'index_content', 'index', '')
 
 
 def compile_site():
-    prep_folder(cfg['out_dir'])
-    pages = []
+    # trailingslashify
+    tsify = lambda x: x+'/' if x[len(x)-1] != '/' else x
 
     # read input directory
-    for ef in os.listdir(cfg['site_dir']):
-        if ef.endswith(cfg['pages_ext']):
-            page_info = compile_page(ef)
-            pages.append({'page': {'name': page_info}})
-        else:
-            copyanything(cfg['site_dir']+ef, cfg['out_dir']+ef)
+    for o in os.walk(cfg['site_dir']):
+        this_in_folder = tsify(o[0])
+        this_folder = this_in_folder.replace(cfg['site_dir'], '')
+        this_out_folder = this_in_folder.replace(cfg['site_dir'], cfg['out_dir'])
+
+        prep_folder(this_out_folder)
+
+        print(this_in_folder)
+
+        if this_in_folder == cfg['site_dir']:
+            pages = [{'page': {'name': pgname_from_fname(f)}} for f in o[2]]
+
+        for ef in o[2]:
+            print('    '+ef)
+            if ef.endswith(cfg['pages_ext']):
+                compile_page(ef, this_folder)
+            else:
+                copyanything(this_in_folder+ef, this_out_folder+ef)
+
 
     compile_index({'pages': pages})
 
