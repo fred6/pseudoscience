@@ -102,7 +102,7 @@ def compile_index(pages_dict):
 
 
 def compile_site():
-    clean_up(cfg['out_dir'])
+    prep_folder(cfg['out_dir'])
     pages = []
 
     # read input directory

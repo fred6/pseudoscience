@@ -27,7 +27,7 @@ def rmanything(thing):
             os.remove(thing)
         else: raise
 
-def clean_up(folder):
+def prep_folder(folder):
     # make output directory if it doesnt exist
     if not os.path.exists(folder):
         os.makedirs(folder)
