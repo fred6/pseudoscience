@@ -58,11 +58,9 @@ def build_etree_rec(data):
 
 def make_layout_vars(content_tree, page_title):
     lv = {}
+    lv['page_title'] = page_title
     lv['site_title'] = cfg['site_title']
     lv['content'] = {}
-
-    if page_title != 'index':
-        lv['page_title'] = page_title
 
     tree = build_etree({'root': lv})
 
