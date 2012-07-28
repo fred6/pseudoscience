@@ -119,7 +119,7 @@ def compile_site():
         print(this_in_folder)
 
         if this_in_folder == cfg['site_dir']:
-            pages = [{'page': {'name': pgname_from_fname(f)}} for f in o[2]]
+            pages = [{'page': {'name': pgname_from_fname(f)}} for f in o[2] if ef.endswith(cfg['pages_ext'])]
 
         for ef in o[2]:
             print('    '+ef)
