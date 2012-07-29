@@ -128,11 +128,12 @@ def compile_site():
             this_folder_no_ts = this_folder[:this_folder.find('/')]
             path_list = this_folder_no_ts.split('/')
 
+            #assign pages to the sub-dict in index_vars corresponding to the subfolder of the page
             dict_acc = index_vars
             for p in path_list[:len(path_list)-1]:
                 dict_acc = dict_acc[p]
 
-            dict_acc[this_folder_no_ts] = {'pages': pages}
+            dict_acc[path_list[len(path_list)-1]] = {'pages': pages}
 
 
         for ef in o[2]:
