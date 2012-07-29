@@ -4,4 +4,8 @@
     <out_dir>out/</out_dir>
     <templates_dir>templates/</templates_dir>
     <pages_ext>.md</pages_ext>
+    <templates>
+        <default_layout>layout</default_layout>
+        <default_page>page_content</default_page>
+    </templates>
 </config>

@@ -13,16 +13,25 @@ def get_config():
     f = open('config.xml', 'r')
     cfg_ele = etree.XML(f.read())
     for var in list(cfg_ele):
-        cfg[var.tag] = var.text
+        if var.tag != 'templates':
+            cfg[var.tag] = var.text
+        else:
+            cfg['templates'] = {}
+
+            for v in list(var):
+                cfg['templates'][v.tag] = v.text
+
     f.close()
 
 
 # set up transforms
 def create_transforms():
     global transform
-    for tr_name in ['layout', 'index_content', 'page_content']:
-        tpl = etree.parse(cfg['templates_dir'] + tr_name + '.xsl')
-        transform[tr_name] = etree.XSLT(tpl)
+    build_xslt = lambda name: etree.XSLT(etree.parse(cfg['templates_dir']+name+'.xsl'))
+    for trk, trv in list(cfg['templates'].items()):
+        transform[trk] = build_xslt(trv)
+
+    transform['index_content'] = build_xslt('index_content')
 
     
 # chop off the markdown file extension
@@ -90,7 +99,7 @@ def write_file_from_result_tree(file_name, folder, LV):
     fname = cfg['out_dir'] + folder + file_name + '.html'
 
     f = open(fname, 'w')
-    f.write(str(transform['layout'](LV)))
+    f.write(str(transform['default_layout'](LV)))
     f.close()
 
 
@@ -103,7 +112,7 @@ def compile_page(fname, folder):
           'path': folder,
           'content': bytes.decode(convert(content, 'markdown', 'html'))}
 
-    write_file_from_dict({'page': pg}, 'page_content', pg['name'], pg['path'])
+    write_file_from_dict({'page': pg}, 'default_page', pg['name'], pg['path'])
 
 
 def compile_index(pages_dict):
@@ -156,7 +165,7 @@ def compile_site():
 
 if __name__ == '__main__':
     if len(argv) == 1:
-        set_cfg()
+        get_config()
         create_transforms()
         compile_site()
     else:
