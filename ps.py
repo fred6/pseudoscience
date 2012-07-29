@@ -3,20 +3,26 @@ from sys import exit, argv
 import os
 from util import *
 
-# get config
+# global vars
 cfg = {}
-f = open('config.xml', 'r')
-cfg_ele = etree.XML(f.read())
-for var in list(cfg_ele):
-    cfg[var.tag] = var.text
-f.close()
+transform = {}
+
+
+def get_config():
+    global cfg
+    f = open('config.xml', 'r')
+    cfg_ele = etree.XML(f.read())
+    for var in list(cfg_ele):
+        cfg[var.tag] = var.text
+    f.close()
 
 
 # set up transforms
-transform = {}
-for tr_name in ['layout', 'index_content', 'page_content']:
-    tpl = etree.parse(cfg['templates_dir'] + tr_name + '.xsl')
-    transform[tr_name] = etree.XSLT(tpl)
+def create_transforms():
+    global transform
+    for tr_name in ['layout', 'index_content', 'page_content']:
+        tpl = etree.parse(cfg['templates_dir'] + tr_name + '.xsl')
+        transform[tr_name] = etree.XSLT(tpl)
 
     
 # chop off the markdown file extension
@@ -150,6 +156,8 @@ def compile_site():
 
 if __name__ == '__main__':
     if len(argv) == 1:
+        set_cfg()
+        create_transforms()
         compile_site()
     else:
         print("there's no arguments right now.")
