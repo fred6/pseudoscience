@@ -8,4 +8,14 @@
         <default_layout>layout</default_layout>
         <default_page>page_content</default_page>
     </templates>
+    <render_rules>
+        <rule>
+            <select>blather/*</select>
+            <page_template>page_blather</page_template>
+        </rule>
+        <rule>
+            <select>index</select>
+            <page_template>index_content</page_template>
+        </rule>
+    </render_rules>
 </config>

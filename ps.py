@@ -1,5 +1,6 @@
 from lxml import etree
 from sys import exit, argv
+from glob import glob
 import os
 from util import *
 
@@ -10,28 +11,30 @@ transform = {}
 
 def get_config():
     global cfg
-    f = open('config.xml', 'r')
-    cfg_ele = etree.XML(f.read())
-    for var in list(cfg_ele):
-        if var.tag != 'templates':
-            cfg[var.tag] = var.text
-        else:
-            cfg['templates'] = {}
 
-            for v in list(var):
-                cfg['templates'][v.tag] = v.text
+    f = open('config.xml', 'r')
+    c_el = etree.XML(f.read())
+
+    cfg = dict([(v.tag, v.text) for v in c_el.xpath('/config/*[not(*)]')])
+
+    cfg['templates'] = dict([(v.tag, v.text) for v in c_el.xpath('/config/templates/*')])
+
+    cfg['render_rules'] = {}
+    for var in c_el.xpath('/config/render_rules/rule'):
+        d = dict([(v.tag, v.text) for v in list(var)])
+
+        cfg['render_rules'][d['select']] = dict([i for i in d.items() if i[0] != 'select'])
 
     f.close()
 
 
-# set up transforms
+# set up transforms (pull all xsls from templates_dir)
 def create_transforms():
     global transform
-    build_xslt = lambda name: etree.XSLT(etree.parse(cfg['templates_dir']+name+'.xsl'))
-    for trk, trv in list(cfg['templates'].items()):
-        transform[trk] = build_xslt(trv)
 
-    transform['index_content'] = build_xslt('index_content')
+    for tpl in glob(cfg['templates_dir']+'*.xsl'):
+        key = tpl.replace(cfg['templates_dir'], '').replace('.xsl', '')
+        transform[key] = etree.XSLT(etree.parse(tpl))
 
     
 # chop off the markdown file extension
@@ -88,7 +91,18 @@ def make_layout_vars(content_tree, page_title, page_path):
     return etree.ElementTree(root_ele)
 
 
-def write_file_from_dict(vardict, tplname, page_name, folder):
+def write_file_from_dict(vardict, page_name, folder):
+    # if folder matches a select in the render_rules
+    # then use whatever templates are specified there
+    tplname = cfg['templates']['default_page']
+
+    match_folder = folder+'*'
+    match_page = folder+page_name
+    for match in [match_folder, match_page]:
+        if cfg['render_rules'].get(match) is not None:
+            if cfg['render_rules'][match].get('page_template') is not None:
+                tplname = cfg['render_rules'][match]['page_template']
+
     vartree = build_etree(vardict)
     result_tree = transform[tplname](vartree)
     LV = make_layout_vars(result_tree, page_name, folder)
@@ -99,7 +113,7 @@ def write_file_from_result_tree(file_name, folder, LV):
     fname = cfg['out_dir'] + folder + file_name + '.html'
 
     f = open(fname, 'w')
-    f.write(str(transform['default_layout'](LV)))
+    f.write(str(transform[cfg['templates']['default_layout']](LV)))
     f.close()
 
 
@@ -112,11 +126,11 @@ def compile_page(fname, folder):
           'path': folder,
           'content': bytes.decode(convert(content, 'markdown', 'html'))}
 
-    write_file_from_dict({'page': pg}, 'default_page', pg['name'], pg['path'])
+    write_file_from_dict({'page': pg}, pg['name'], pg['path'])
 
 
 def compile_index(pages_dict):
-    write_file_from_dict(pages_dict, 'index_content', 'index', '')
+    write_file_from_dict(pages_dict, 'index', '')
 
 
 def compile_site():
