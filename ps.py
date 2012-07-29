@@ -94,9 +94,10 @@ def compile_page(fname, folder):
     file.close()
 
     pg = {'name': pgname_from_fname(fname),
+          'path': folder,
           'content': bytes.decode(convert(content, 'markdown', 'html'))}
 
-    write_file_from_dict({'page': pg}, 'page_content', pg['name'], folder)
+    write_file_from_dict({'page': pg}, 'page_content', pg['name'], pg['path'])
 
 
 def compile_index(pages_dict):
