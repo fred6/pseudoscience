@@ -1,4 +1,3 @@
  - dont auto-gen indices. make that specified in the config.
  - pull first line out of the doc and write that as the link text in index. also the title in nav.
- - changelog. indicate datetime of last change for site/page?
  - tags/categories
