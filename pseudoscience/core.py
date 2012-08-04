@@ -2,6 +2,8 @@ from lxml import etree
 from sys import exit, argv
 from glob import glob
 import os
+from functools import reduce
+
 from pseudoscience.util import *
 
 # global vars
@@ -114,11 +116,40 @@ def compile_index(pages_dict):
     write_file_from_dict(pages_dict, 'index', '')
 
 
+
+class SiteMap():
+    def __init__(self):
+        self.smap = {}
+        for o in os.walk(cfg.site_dir):
+            rel_fldr = o[0].replace(cfg.site_dir, '')
+            self._add_to_map(rel_fldr, o[2])
+
+    def _add_to_map(self, path, files):
+        path_list = path.split('/')
+        pages = [(pgname_from_fname(f), '') for f in files if self._is_content_file(f)]
+
+        # if path_list = [''], then we are in root. just assign to smap straight away.
+        if path_list == ['']:
+            self.smap = dict(pages)
+        elif pages != []:
+            # the last in path_list is not created yet so only traverse up to second-to-last
+            # reduce just turns [a, b, c, d] into self.smap[a][b][c].
+            # afterwards we create self.smap[a][b][c][d]
+            parent_folder = reduce(lambda D, k: D[k], path_list[:-1], self.smap)
+
+            parent_folder[path_list[-1]] = dict(pages)
+
+    def _is_content_file(self, filename):
+        return filename.endswith(cfg.pages_ext)
+
 def compile_site():
     create_transforms()
 
     # trailingslashify
     tsify = lambda x: x+'/' if x[len(x)-1] != '/' else x
+
+    smap = SiteMap()
+    print(smap.smap)
 
     index_vars = {}
     for o in os.walk(cfg.site_dir):
