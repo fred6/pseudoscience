@@ -105,7 +105,7 @@ def compile_page(fname, folder):
 
     pg = {'name': pgname_from_fname(fname),
           'path': folder,
-          'content': bytes.decode(convert(content, 'markdown', 'html'))}
+          'content': bytes.decode(convert(content, cfg.page_format, 'html'))}
 
     write_file_from_dict({'page': pg}, pg['name'], pg['path'])
 
