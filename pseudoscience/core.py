@@ -120,72 +120,49 @@ def compile_index(pages_dict):
 class SiteMap():
     def __init__(self):
         self.smap = {}
-        for o in os.walk(cfg.site_dir):
-            rel_fldr = o[0].replace(cfg.site_dir, '')
-            self._add_to_map(rel_fldr, o[2])
 
-    def _add_to_map(self, path, files):
+    def add_to_map(self, path, files):
         path_list = path.split('/')
-        pages = [(pgname_from_fname(f), '') for f in files if self._is_content_file(f)]
+        pginfo = lambda f: {'page': {'name': pgname_from_fname(f), 'path': path+'/'}}
+
+        pages = [pginfo(f) for f in files if self._is_content_file(f)]
+
+        folder_dict = {'pages': pages, 'subs': []}
 
         # if path_list = [''], then we are in root. just assign to smap straight away.
         if path_list == ['']:
-            self.smap = dict(pages)
+            self.smap = folder_dict
         elif pages != []:
             # the last in path_list is not created yet so only traverse up to second-to-last
             # reduce just turns [a, b, c, d] into self.smap[a][b][c].
             # afterwards we create self.smap[a][b][c][d]
-            parent_folder = reduce(lambda D, k: D[k], path_list[:-1], self.smap)
+            parent_folder = reduce(lambda D, k: D['subs'][k], path_list[:-1], self.smap)
 
-            parent_folder[path_list[-1]] = dict(pages)
+            parent_folder[path_list[-1]] = folder_dict
+
 
     def _is_content_file(self, filename):
         return filename.endswith(cfg.pages_ext)
 
+
+def copy_to_out(rel_file_path):
+    copyanything(cfg.site_dir+rel_file_path, cfg.out_dir+rel_file_path)
+
+
 def compile_site():
     create_transforms()
-
-    # trailingslashify
-    tsify = lambda x: x+'/' if x[len(x)-1] != '/' else x
-
     smap = SiteMap()
-    print(smap.smap)
 
-    index_vars = {}
     for o in os.walk(cfg.site_dir):
-        this_in_folder = tsify(o[0])
-        this_out_folder = this_in_folder.replace(cfg.site_dir, cfg.out_dir)
-        this_folder = this_in_folder.replace(cfg.site_dir, '')
+        rel_folder = o[0].replace(cfg.site_dir, '')
+        smap.add_to_map(rel_folder, o[2])
 
-        prep_folder(this_out_folder)
-
-        print(this_in_folder)
-
-        pages = [{'page': 
-                    {'name': pgname_from_fname(f),
-                     'path': this_folder}
-                 } for f in o[2] if f.endswith(cfg.pages_ext)]
-
-        if this_in_folder == cfg.site_dir:
-            index_vars['pages'] = pages
-        else:
-            this_folder_no_ts = this_folder[:this_folder.find('/')]
-            path_list = this_folder_no_ts.split('/')
-
-            #assign pages to the sub-dict in index_vars corresponding to the subfolder of the page
-            dict_acc = index_vars
-            for p in path_list[:len(path_list)-1]:
-                dict_acc = dict_acc[p]
-
-            dict_acc[path_list[len(path_list)-1]] = {'pages': pages}
-
-
+        prep_folder(cfg.out_dir+rel_folder)
         for ef in o[2]:
-            print('    '+ef)
             if ef.endswith(cfg.pages_ext):
-                compile_page(ef, this_folder)
+                compile_page(ef, rel_folder+'/')
             else:
-                copyanything(this_in_folder+ef, this_out_folder+ef)
+                copy_to_out(rel_folder+'/'+ef)
 
 
-    compile_index({'root': index_vars})
+    compile_index({'root': smap.smap})
