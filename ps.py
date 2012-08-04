@@ -4,41 +4,22 @@ from glob import glob
 import os
 from util import *
 
+
 # global vars
-cfg = {}
 transform = {}
-
-
-def get_config():
-    global cfg
-
-    f = open('config.xml', 'r')
-    c_el = etree.XML(f.read())
-
-    cfg = dict([(v.tag, v.text) for v in c_el.xpath('/config/*[not(*)]')])
-
-    cfg['templates'] = dict([(v.tag, v.text) for v in c_el.xpath('/config/templates/*')])
-
-    cfg['render_rules'] = {}
-    for var in c_el.xpath('/config/render_rules/rule'):
-        d = dict([(v.tag, v.text) for v in list(var)])
-
-        cfg['render_rules'][d['select']] = dict([i for i in d.items() if i[0] != 'select'])
-
-    f.close()
 
 
 # set up transforms (pull all xsls from templates_dir)
 def create_transforms():
     global transform
 
-    for tpl in glob(cfg['templates_dir']+'*.xsl'):
-        key = tpl.replace(cfg['templates_dir'], '').replace('.xsl', '')
+    for tpl in glob(cfg.templates_dir+'*.xsl'):
+        key = tpl.replace(cfg.templates_dir, '').replace('.xsl', '')
         transform[key] = etree.XSLT(etree.parse(tpl))
 
     
 # chop off the markdown file extension
-pgname_from_fname = lambda f: f[:f.find(cfg['pages_ext'])]
+pgname_from_fname = lambda f: f[:f.find(cfg.pages_ext)]
 
 
 def build_etree(data):
@@ -78,7 +59,7 @@ def make_layout_vars(content_tree, page_title, page_path):
     lv = {}
     lv['page_title'] = page_title
     lv['page_path'] = page_path
-    lv['site_title'] = cfg['site_title']
+    lv['site_title'] = cfg.site_title
     lv['content'] = {}
 
     tree = build_etree({'root': lv})
@@ -94,14 +75,14 @@ def make_layout_vars(content_tree, page_title, page_path):
 def write_file_from_dict(vardict, page_name, folder):
     # if folder matches a select in the render_rules
     # then use whatever templates are specified there
-    tplname = cfg['templates']['default_page']
+    tplname = cfg.templates['default_page']
 
     match_folder = folder+'*'
     match_page = folder+page_name
     for match in [match_folder, match_page]:
-        if cfg['render_rules'].get(match) is not None:
-            if cfg['render_rules'][match].get('page_template') is not None:
-                tplname = cfg['render_rules'][match]['page_template']
+        if cfg.render_rules.get(match) is not None:
+            if cfg.render_rules[match].get('page_template') is not None:
+                tplname = cfg.render_rules[match]['page_template']
 
     vartree = build_etree(vardict)
     result_tree = transform[tplname](vartree)
@@ -110,15 +91,15 @@ def write_file_from_dict(vardict, page_name, folder):
 
 
 def write_file_from_result_tree(file_name, folder, LV):
-    fname = cfg['out_dir'] + folder + file_name + '.html'
+    fname = cfg.out_dir + folder + file_name + '.html'
 
     f = open(fname, 'w')
-    f.write(str(transform[cfg['templates']['default_layout']](LV)))
+    f.write(str(transform[cfg.templates['default_layout']](LV)))
     f.close()
 
 
 def compile_page(fname, folder):
-    file = open(cfg['site_dir']+folder+fname, 'r')
+    file = open(cfg.site_dir+folder+fname, 'r')
     content = file.read()
     file.close()
 
@@ -138,10 +119,10 @@ def compile_site():
     tsify = lambda x: x+'/' if x[len(x)-1] != '/' else x
 
     index_vars = {}
-    for o in os.walk(cfg['site_dir']):
+    for o in os.walk(cfg.site_dir):
         this_in_folder = tsify(o[0])
-        this_out_folder = this_in_folder.replace(cfg['site_dir'], cfg['out_dir'])
-        this_folder = this_in_folder.replace(cfg['site_dir'], '')
+        this_out_folder = this_in_folder.replace(cfg.site_dir, cfg.out_dir)
+        this_folder = this_in_folder.replace(cfg.site_dir, '')
 
         prep_folder(this_out_folder)
 
@@ -150,9 +131,9 @@ def compile_site():
         pages = [{'page': 
                     {'name': pgname_from_fname(f),
                      'path': this_folder}
-                 } for f in o[2] if f.endswith(cfg['pages_ext'])]
+                 } for f in o[2] if f.endswith(cfg.pages_ext)]
 
-        if this_in_folder == cfg['site_dir']:
+        if this_in_folder == cfg.site_dir:
             index_vars['pages'] = pages
         else:
             this_folder_no_ts = this_folder[:this_folder.find('/')]
@@ -168,7 +149,7 @@ def compile_site():
 
         for ef in o[2]:
             print('    '+ef)
-            if ef.endswith(cfg['pages_ext']):
+            if ef.endswith(cfg.pages_ext):
                 compile_page(ef, this_folder)
             else:
                 copyanything(this_in_folder+ef, this_out_folder+ef)
@@ -179,7 +160,9 @@ def compile_site():
 
 if __name__ == '__main__':
     if len(argv) == 1:
-        get_config()
+        # get config
+        import config as cfg
+
         create_transforms()
         compile_site()
     else:
