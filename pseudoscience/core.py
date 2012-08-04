@@ -122,22 +122,19 @@ class SiteMap():
         self.smap = {}
 
     def add_to_map(self, path, files):
-        path_list = path.split('/')
         pginfo = lambda f: {'page': {'name': pgname_from_fname(f), 'path': path+'/'}}
-
         pages = [pginfo(f) for f in files if self._is_content_file(f)]
-
         folder_dict = {'pages': pages, 'subs': []}
 
-        # if path_list = [''], then we are in root. just assign to smap straight away.
-        if path_list == ['']:
+        if path == '':
             self.smap = folder_dict
         elif pages != []:
+            path_list = path.split('/')
+
             # the last in path_list is not created yet so only traverse up to second-to-last
             # reduce just turns [a, b, c, d] into self.smap[a][b][c].
             # afterwards we create self.smap[a][b][c][d]
             parent_folder = reduce(lambda D, k: D['subs'][k], path_list[:-1], self.smap)
-
             parent_folder[path_list[-1]] = folder_dict
 
 
