@@ -2,11 +2,11 @@ from lxml import etree
 from sys import exit, argv
 from glob import glob
 import os
-from util import *
-
+from pseudoscience.util import *
 
 # global vars
 transform = {}
+import config as cfg
 
 
 # set up transforms (pull all xsls from templates_dir)
@@ -115,6 +115,8 @@ def compile_index(pages_dict):
 
 
 def compile_site():
+    create_transforms()
+
     # trailingslashify
     tsify = lambda x: x+'/' if x[len(x)-1] != '/' else x
 
@@ -156,14 +158,3 @@ def compile_site():
 
 
     compile_index({'root': index_vars})
-
-
-if __name__ == '__main__':
-    if len(argv) == 1:
-        # get config
-        import config as cfg
-
-        create_transforms()
-        compile_site()
-    else:
-        print("there's no arguments right now.")
