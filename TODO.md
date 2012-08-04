@@ -1,4 +1,6 @@
  - change xml-based "config" to a python DSL that specifies how the site should be compiled. look at hakyll/xmonad
+ - add "draft" capability, i.e. pages in site/ that dont get compiled
+ - add ability to use reStructuredText
  - dont auto-gen indices. make that specified in the config.
  - pull first line out of the doc and write that as the link text in index. also the title in nav.
  - tags/categories
