@@ -43,13 +43,13 @@ def render_page(page_vars):
                 tplname = cfg.render_rules[match]['page_template']
 
     page_content = transform[tplname].render(page_vars)
-    write_file_from_result_tree(page_name, folder, page_content)
+    render_layout_and_write(page_name, folder, page_content)
 
 
-def write_file_from_result_tree(page_name, folder, content):
+def render_layout_and_write(page_name, folder, content):
     fname = cfg.out_dir + folder + page_name + '.html'
 
-    layout_vars = {'content': content, 'title': cfg.site_title+' - '+page_name}
+    layout_vars = {'content': content, 'title': ' > '.join(folder.split('/'))+page_name}
 
     f = open(fname, 'w')
     f.write(str(transform[cfg.templates['default_layout']].render(layout_vars)))
