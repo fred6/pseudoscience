@@ -124,7 +124,7 @@ def compile_site():
     smap = SiteMap()
 
     for o in os.walk(cfg.site_dir):
-        rel_folder = o[0].replace(cfg.site_dir, '/')
+        rel_folder = o[0].replace(cfg.site_dir, '') + '/'
 
         prep_folder(cfg.out_dir+rel_folder)
         for ef in o[2]:
