@@ -18,8 +18,8 @@ def create_transforms():
 
     env = Environment(loader=FileSystemLoader(cfg.templates_dir, encoding='utf-8'))
     tplext = '.html'
-    for tpl in glob(cfg.templates_dir+'*'+tplext):
-        key = tpl.replace(cfg.templates_dir, '').replace(tplext, '')
+    for tpl in glob(cfg.templates_dir+'/*'+tplext):
+        key = tpl.replace(cfg.templates_dir+'/', '').replace(tplext, '')
         transform[key] = env.get_template(key+tplext)
 
     
@@ -49,7 +49,7 @@ def render_page(page_vars):
 def render_layout_and_write(page_name, folder, content):
     fname = cfg.out_dir + folder + page_name + '.html'
 
-    layout_vars = {'content': content, 'title': ' > '.join(folder.split('/'))+page_name}
+    layout_vars = {'content': content, 'title': ' > '.join(folder[1:].split('/'))+page_name}
 
     f = open(fname, 'w')
     f.write(str(transform[cfg.templates['default_layout']].render(layout_vars)))
@@ -81,11 +81,9 @@ class SiteMap():
     def __init__(self):
         self.smap = {}
         for o in os.walk(cfg.site_dir):
-            rel_folder = o[0].replace(cfg.site_dir, '')
+            rel_folder = o[0].replace(cfg.site_dir, '') + '/'
 
-            check =  [f for f in o[2] if self._is_content_file(f)]
-            if check:
-                self.add_to_map(rel_folder, o[1], o[2])
+            self.add_to_map(rel_folder, o[1], o[2])
 
 
     def add_to_map(self, path, folders, files):
@@ -94,16 +92,16 @@ class SiteMap():
 
         #pages = [pginfo(f) for f in files if self._is_content_file(f)]
         #folders = [fldinfo(f) for f in folders]
-        pages = [(pgname_from_fname(f), {'title': '', 'path': path+'/'}) 
+        pages = [(pgname_from_fname(f), {'title': '', 'path': path}) 
                 for f in files if self._is_content_file(f)]
-        folders = [(f, {'content': {}, 'path': path+'/'}) 
+        folders = [(f, {'content': {}, 'path': path}) 
                 for f in folders]
         folder_dict = {'pages': dict(pages), 'folders': dict(folders)}
 
-        if path == '':
+        if path == '/':
             self.smap = folder_dict
         elif pages != []:
-            path_list = path.split('/')
+            path_list = path[1:-1].split('/')
 
             # the last in path_list is not created yet so only traverse up to second-to-last
             # reduce just turns [a, b, c, d] into self.smap[a][b][c].
