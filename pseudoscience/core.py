@@ -47,6 +47,7 @@ def render_page(page_vars):
 
 
 def render_layout_and_write(page_name, folder, content):
+    folder = '' if folder == '/' else folder
     fname = cfg.out_dir + folder + page_name + '.html'
 
     layout_vars = {'content': content, 'title': ' > '.join(folder.split('/'))+page_name}
@@ -71,7 +72,7 @@ def compile_page(fname, folder):
 def compile_index(smap):
     index_vars = {
             'name': 'index',
-            'path': '',
+            'path': '/',
             'map': smap}
     render_page(index_vars)
 
