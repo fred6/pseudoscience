@@ -47,7 +47,6 @@ def render_page(page_vars):
 
 
 def render_layout_and_write(page_name, folder, content):
-    folder = '' if folder == '/' else folder
     fname = cfg.out_dir + folder + page_name + '.html'
 
     layout_vars = {'content': content, 'title': ' > '.join(folder.split('/'))+page_name}
@@ -125,14 +124,14 @@ def compile_site():
     smap = SiteMap()
 
     for o in os.walk(cfg.site_dir):
-        rel_folder = o[0].replace(cfg.site_dir, '')
+        rel_folder = o[0].replace(cfg.site_dir, '/')
 
         prep_folder(cfg.out_dir+rel_folder)
         for ef in o[2]:
             if ef.endswith(cfg.pages_ext):
-                compile_page(ef, rel_folder+'/')
+                compile_page(ef, rel_folder)
             else:
-                copy_to_out(rel_folder+'/'+ef)
+                copy_to_out(rel_folder+ef)
 
 
     compile_index(smap.smap)
