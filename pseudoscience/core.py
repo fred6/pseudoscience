@@ -74,15 +74,18 @@ def render_layout_and_write(page_name, folder, content):
     f.close()
 
 
-def compile_page(fname, folder):
-    file = open(cfg.site_dir+folder+fname, 'r')
+def compile_page(in_fpath, out_fpath):
+    file = open(cfg.site_dir+in_fpath, 'r')
     content = file.read()
     file.close()
 
-    pg = {'name': pgname_from_fname(fname),
-          'path': folder,
+    last_slash = out_fpath.rindex('/')
+
+    pg = {'name': out_fpath[last_slash+1:],
+          'path': out_fpath[:last_slash+1],
           'content': bytes.decode(convert(content, cfg.page_format, 'html'))}
 
+    print('compile_page:::'+pg['name']+' '+pg['path'])
     render_page(pg)
 
 
@@ -136,6 +139,23 @@ def copy_to_out(rel_file_path):
     copyanything(cfg.site_dir+rel_file_path, cfg.out_dir+rel_file_path)
 
 
+def fname_router(fpath):
+    if fpath.endswith(cfg.pages_ext):
+        return pgname_from_fname(fpath)
+    else:
+        return fpath
+
+
+def compile_file(in_fpath, out_fpath, site_map):
+    if in_fpath == '/':
+        compile_index(site_map)
+    elif in_fpath.endswith(cfg.pages_ext):
+        compile_page(in_fpath, out_fpath)
+    else:
+        copy_to_out(in_fpath)
+
+
+
 def compile_site():
     create_transforms()
     smap = SiteMap()
@@ -144,6 +164,10 @@ def compile_site():
         rel_folder = o[0].replace(cfg.site_dir, '') + '/'
 
         prep_folder(cfg.out_dir+rel_folder)
+
+        if rel_folder == '/':
+            compile_file(rel_folder, '/index', smap.smap)
+
         # the logic here should be as follows:
         # for each file in this directory:
         #    call the appropriate router
@@ -163,10 +187,10 @@ def compile_site():
         # a reST file gets compiled into raw text
 
         for ef in o[2]:
-            if ef.endswith(cfg.pages_ext):
-                compile_page(ef, rel_folder)
-            else:
-                copy_to_out(rel_folder+ef)
+            fpath = rel_folder+ef
+            compile_file(fpath, fname_router(fpath), smap.smap)
 
-
-    compile_index(smap.smap)
+            #if ef.endswith(cfg.pages_ext):
+                #compile_page(ef, rel_folder)
+            #else:
+                #copy_to_out(rel_folder+ef)
