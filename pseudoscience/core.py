@@ -45,12 +45,25 @@ def create_transforms():
 pgname_from_fname = lambda f: f[:f.find(cfg.pages_ext)]
 
 
+# Routers
+def id_router(fpath):
+    return fpath
+
+def page_router(fpath):
+    return pgname_from_fname(fpath)+'.html'
+
+def index_router(fpath):
+    return fpath+'index.html'
+
+
+
+
 def render_page(page_vars):
     # if folder matches a select in the render_rules
     # then use whatever templates are specified there
     tplname = cfg.templates['default_page']
 
-    folder = page_vars['path']
+    folder = page_vars['folder']
     page_name = page_vars['name']
 
     match_folder = folder+'*'
@@ -61,11 +74,11 @@ def render_page(page_vars):
                 tplname = cfg.render_rules[match]['page_template']
 
     page_content = transform[tplname].render(page_vars)
-    render_layout_and_write(page_name, folder, page_content)
+    render_layout_and_write(page_name, folder, page_vars['fullpath'], page_content)
 
 
-def render_layout_and_write(page_name, folder, content):
-    fname = cfg.out_dir + folder + page_name + '.html'
+def render_layout_and_write(page_name, folder, fullpath, content):
+    fname = cfg.out_dir + fullpath
 
     layout_vars = {'content': content, 'title': ' > '.join(folder[1:].split('/'))+page_name}
 
@@ -81,18 +94,20 @@ def compile_page(in_fpath, out_fpath):
 
     last_slash = out_fpath.rindex('/')
 
-    pg = {'name': out_fpath[last_slash+1:],
-          'path': out_fpath[:last_slash+1],
+    pg = {'name': out_fpath[last_slash+1:out_fpath.index('.')],
+          'folder': out_fpath[:last_slash+1],
+          'fullpath': out_fpath,
           'content': bytes.decode(convert(content, cfg.page_format, 'html'))}
 
-    print('compile_page:::'+pg['name']+' '+pg['path'])
     render_page(pg)
 
 
-def compile_index(smap):
+def compile_index(out_fpath, smap):
+    last_slash = out_fpath.rindex('/')
     index_vars = {
-            'name': 'index',
-            'path': '/',
+            'name': out_fpath[last_slash+1:out_fpath.index('.')],
+            'folder': out_fpath[:last_slash+1],
+            'fullpath': out_fpath,
             'map': smap}
     render_page(index_vars)
 
@@ -139,21 +154,14 @@ def copy_to_out(rel_file_path):
     copyanything(cfg.site_dir+rel_file_path, cfg.out_dir+rel_file_path)
 
 
-def fname_router(fpath):
-    if fpath.endswith(cfg.pages_ext):
-        return pgname_from_fname(fpath)
-    else:
-        return fpath
-
 
 def compile_file(in_fpath, out_fpath, site_map):
     if in_fpath == '/':
-        compile_index(site_map)
+        compile_index(out_fpath, site_map)
     elif in_fpath.endswith(cfg.pages_ext):
         compile_page(in_fpath, out_fpath)
     else:
         copy_to_out(in_fpath)
-
 
 
 def compile_site():
@@ -166,7 +174,7 @@ def compile_site():
         prep_folder(cfg.out_dir+rel_folder)
 
         if rel_folder == '/':
-            compile_file(rel_folder, '/index', smap.smap)
+            compile_file(rel_folder, index_router(rel_folder), smap.smap)
 
         # the logic here should be as follows:
         # for each file in this directory:
@@ -188,9 +196,9 @@ def compile_site():
 
         for ef in o[2]:
             fpath = rel_folder+ef
-            compile_file(fpath, fname_router(fpath), smap.smap)
+            if fpath.endswith(cfg.pages_ext):
+                route_out = page_router(fpath)
+            else:
+                route_out = id_router(fpath)
 
-            #if ef.endswith(cfg.pages_ext):
-                #compile_page(ef, rel_folder)
-            #else:
-                #copy_to_out(rel_folder+ef)
+            compile_file(fpath, route_out, smap.smap)
