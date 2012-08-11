@@ -1,3 +1,4 @@
+ - for rules, allow regexp as the match string
  - fully implement routes/compiler dictation in config
  - add "draft" capability, i.e. pages in site/ that dont get compiled
  - test non-markdown posting
