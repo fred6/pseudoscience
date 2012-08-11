@@ -6,6 +6,24 @@ from functools import reduce
 from jinja2 import Environment, FileSystemLoader
 
 from pseudoscience.util import *
+################
+## philosophy ##
+################
+# hakyll's notion of  fully general compilation rules where you pass around
+# a compiler function that tells you how the document should be compiled
+# (and where you have to specify an identity compilation function in order to
+# copy, say a css file over) is obviously pretty powerful. but in practice
+# there are only two compilation possibilities that I want to handle:
+# 
+#   - copy the file over verbatim
+#   - parse the meta data, run the body through pandoc
+#
+# it might be wise to set up some infrastructure to be able to extend towards
+# fully general compilation rules in the future, but honestly it seems pointless
+# to actually implement.
+#
+# So in reality, the 'rules' we specify in config, we can get by with just specifying
+# routing rules and which templates to use
 
 # global vars
 transform = {}
@@ -113,6 +131,7 @@ class SiteMap():
         return filename.endswith(cfg.pages_ext)
 
 
+
 def copy_to_out(rel_file_path):
     copyanything(cfg.site_dir+rel_file_path, cfg.out_dir+rel_file_path)
 
@@ -125,6 +144,24 @@ def compile_site():
         rel_folder = o[0].replace(cfg.site_dir, '') + '/'
 
         prep_folder(cfg.out_dir+rel_folder)
+        # the logic here should be as follows:
+        # for each file in this directory:
+        #    call the appropriate router
+        #    "compile" the file
+        #
+        # compilation takes the output of the router (the file path to write),
+        # and the file path of the input file and uses some logic to yield output
+        # content. we currently have two cases:
+        #   - verbatim copy
+        #   - parse metadata, run content through pandoc, call a chain of template files
+        # i can see use for a third:
+        #   - compress file (like minifying CSS and java)
+        #   - compile css (using some language like SASS)
+        #
+        # i was thinking about bringing templates under the fold of of 'compilation', but
+        # theres some difficulty. a jinja2 template gets 'compiled' into a compiler.
+        # a reST file gets compiled into raw text
+
         for ef in o[2]:
             if ef.endswith(cfg.pages_ext):
                 compile_page(ef, rel_folder)
