@@ -9,28 +9,43 @@ from jinja2 import Environment, FileSystemLoader
 from pseudoscience.util import *
 
 # global vars
-transform = {}
+renderer = {}
 import config as cfg
 
 # parse rules
 def parse_rules():
-    SiteRule = namedtuple('SiteRule', 'pattern, router, options')
+    SiteRule = namedtuple('SiteRule', 'pattern, router, renderer')
     cfg.rules = []
     for r in cfg.r:
-        cfg.rules.append(SiteRule(r[0], r[1], r[2] if len(r) == 3 else {}))
+        cfg.rules.append(SiteRule(r[0], r[1], r[2] if len(r) == 3 else cfg.templates['default_page']))
 
 
-# set up transforms (pull all xsls from templates_dir)
-def create_transforms():
-    global transform
+def create_renderers():
+    global renderer
 
     env = Environment(loader=FileSystemLoader(cfg.templates_dir, encoding='utf-8'))
     tplext = '.html'
+
+    layout_tpl = env.get_template(cfg.templates['default_layout']+tplext)
+
+    def make_renderer(page_template):
+        def renderer(pg_vars):
+            page_content = page_template.render(pg_vars)
+            nav = ' > '.join(pg_vars['folder'][1:].split('/')) + pg_vars['name']
+            layout_vars = {'content': page_content, 'title': nav}
+
+            fname = cfg.out_dir + pg_vars['fullpath']
+            with open(fname, 'w') as f:
+                f.write(str(layout_tpl.render(layout_vars)))
+
+        return renderer
+
     for tpl in glob(cfg.templates_dir+'/*'+tplext):
         key = tpl.replace(cfg.templates_dir+'/', '').replace(tplext, '')
-        transform[key] = env.get_template(key+tplext)
+        if key != cfg.templates['default_layout']:
+            renderer[key] = make_renderer(env.get_template(key+tplext))
 
-    
+
 # chop off the markdown file extension
 pgname_from_fname = lambda f: f[:f.find(cfg.pages_ext)]
 
@@ -83,30 +98,6 @@ class SiteMap():
         return filename.endswith(cfg.pages_ext)
 
 
-def make_renderer(layout_name=cfg.templates['default_layout'], page_name=None):
-    default = cfg.templates.get('default_page')
-
-    if page_name is not None:
-        page_template = transform[page_name]
-    elif default is not None:
-        page_template = transform[default]
-    else:
-        raise psException('cannot make renderer, no page template supplied')
-
-    layout_template = transform[layout_name]
-
-    def renderer(pg_vars):
-        page_content = page_template.render(pg_vars)
-        nav = ' > '.join(pg_vars['folder'][1:].split('/')) + pg_vars['name']
-        layout_vars = {'content': page_content, 'title': nav}
-
-        fname = cfg.out_dir + pg_vars['fullpath']
-        with open(fname, 'w') as f:
-            f.write(str(layout_template.render(layout_vars)))
-
-    return renderer
-
-
 def make_html_vars(in_fpath, out_fpath, smap):
     content = None
     if not in_fpath.endswith('/'):
@@ -141,21 +132,20 @@ def match_rule(fpath):
     for r in cfg.rules:
         restr = '\A' + r[0].replace('.', '\.').replace('*', '.+') + '\Z'
         if re.match(restr, fpath):
-            return (globals()[r.router], r.options)
+            return (globals()[r.router], renderer[r.renderer])
 
     raise psException('no route found')
 
 
 def compile_site():
-    create_transforms()
+    create_renderers()
     parse_rules()
     smap = SiteMap()
 
     def match_and_compile(path):
         try:
             mr = match_rule(path)
-            renderer = make_renderer(page_name = mr[1].get('page_template'))
-            compile_file(path, mr[0](path), smap.smap, renderer)
+            compile_file(path, mr[0](path), smap.smap, mr[1])
         except psException as e:
             pass
 
