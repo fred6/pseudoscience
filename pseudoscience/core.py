@@ -108,17 +108,15 @@ def render_layout_and_write(page_name, folder, fullpath, content):
 
     layout_vars = {'content': content, 'title': ' > '.join(folder[1:].split('/'))+page_name}
 
-    f = open(fname, 'w')
-    f.write(str(transform[cfg.templates['default_layout']].render(layout_vars)))
-    f.close()
+    with open(fname, 'w') as f:
+        f.write(str(transform[cfg.templates['default_layout']].render(layout_vars)))
 
 
 def make_html_vars(in_fpath, out_fpath, smap):
     content = None
     if not in_fpath.endswith('/'):
-        file = open(cfg.site_dir+in_fpath, 'r')
-        content = file.read()
-        file.close()
+        with open(cfg.site_dir+in_fpath, 'r') as file:
+            content = file.read()
 
     last_slash = out_fpath.rindex('/')
     pv = {
