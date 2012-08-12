@@ -1,7 +1,5 @@
- - for rules, allow regexp as the match string
- - fully implement routes/compiler dictation in config
- - add "draft" capability, i.e. pages in site/ that dont get compiled
- - test non-markdown posting
- - dont auto-gen indices. make that specified in the config.
+ - implement compiler stuff in config
  - metadata
  - tags/categories
+ - add "draft" capability, i.e. pages in site/ that dont get compiled
+ - test non-markdown posting
