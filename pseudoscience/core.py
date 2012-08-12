@@ -1,15 +1,10 @@
-from sys import exit, argv
-from glob import glob
 import os, re
 from functools import reduce
 from collections import namedtuple
 
-from jinja2 import Environment, FileSystemLoader
-
 from pseudoscience.util import *
+from pseudoscience.renderers import jinja2_renderers
 
-# global vars
-renderer = {}
 import config as cfg
 
 # parse rules
@@ -18,32 +13,6 @@ def parse_rules():
     cfg.rules = []
     for r in cfg.r:
         cfg.rules.append(SiteRule(r[0], r[1], r[2] if len(r) == 3 else cfg.templates['default_page']))
-
-
-def create_renderers():
-    global renderer
-
-    env = Environment(loader=FileSystemLoader(cfg.templates_dir, encoding='utf-8'))
-    tplext = '.html'
-
-    layout_tpl = env.get_template(cfg.templates['default_layout']+tplext)
-
-    def make_renderer(page_template):
-        def renderer(pg_vars):
-            page_content = page_template.render(pg_vars)
-            nav = ' > '.join(pg_vars['folder'][1:].split('/')) + pg_vars['name']
-            layout_vars = {'content': page_content, 'title': nav}
-
-            fname = cfg.out_dir + pg_vars['fullpath']
-            with open(fname, 'w') as f:
-                f.write(str(layout_tpl.render(layout_vars)))
-
-        return renderer
-
-    for tpl in glob(cfg.templates_dir+'/*'+tplext):
-        key = tpl.replace(cfg.templates_dir+'/', '').replace(tplext, '')
-        if key != cfg.templates['default_layout']:
-            renderer[key] = make_renderer(env.get_template(key+tplext))
 
 
 # chop off the markdown file extension
@@ -128,19 +97,17 @@ def compile_file(in_fpath, out_fpath, site_map, renderer):
         copy_to_out(in_fpath)
 
 
-def match_rule(fpath):
-    for r in cfg.rules:
-        restr = '\A' + r[0].replace('.', '\.').replace('*', '.+') + '\Z'
-        if re.match(restr, fpath):
-            return (globals()[r.router], renderer[r.renderer])
-
-    raise psException('no route found')
-
-
 def compile_site():
-    create_renderers()
-    parse_rules()
-    smap = SiteMap()
+    # establish renderers
+    renderers = jinja2_renderers(cfg)
+
+    def match_rule(fpath):
+        for r in cfg.rules:
+            restr = '\A' + r[0].replace('.', '\.').replace('*', '.+') + '\Z'
+            if re.match(restr, fpath):
+                return (globals()[r.router], renderers[r.renderer])
+
+        raise psException('no route found')
 
     def match_and_compile(path):
         try:
@@ -149,9 +116,11 @@ def compile_site():
         except psException as e:
             pass
 
+    parse_rules()
+    smap = SiteMap()
+
     for o in os.walk(cfg.site_dir):
         rel_folder = o[0].replace(cfg.site_dir, '') + '/'
-
         prep_folder(cfg.out_dir+rel_folder)
 
         match_and_compile(rel_folder)
