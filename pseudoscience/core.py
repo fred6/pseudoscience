@@ -90,17 +90,12 @@ class SiteMap():
 
 
 def render_page(page_vars, compile_opts):
-    tplname = cfg.templates['default_page']
-
-    folder = page_vars['folder']
-    page_name = page_vars['name']
-
-    tmp = compile_opts.get('page_template') 
-    if tmp is not None:
-        tplname = tmp
+    tplname = compile_opts.get('page_template') 
+    if tplname is None:
+        tplname = cfg.templates['default_page']
 
     page_content = transform[tplname].render(page_vars)
-    render_layout_and_write(page_name, folder, page_vars['fullpath'], page_content)
+    render_layout_and_write(page_vars['name'], page_vars['folder'], page_vars['fullpath'], page_content)
 
 
 def render_layout_and_write(page_name, folder, fullpath, content):
