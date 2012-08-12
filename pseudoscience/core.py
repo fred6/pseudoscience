@@ -159,8 +159,7 @@ def compile_site():
     def match_and_compile(path):
         try:
             mr = match_rule(path)
-            if len(mr) == 1:
-                compile_file(path, mr[0](path), smap.smap, mr[1])
+            compile_file(path, mr[0](path), smap.smap, mr[1])
         except psException as e:
             pass
 
