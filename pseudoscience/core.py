@@ -62,11 +62,6 @@ class SiteMap():
 
 
     def add_to_map(self, path, folders, files):
-        #pginfo = lambda f: {'page': {'name': pgname_from_fname(f), 'path': path+'/'}}
-        #fldinfo = lambda f: {'folder': {'name': f, 'path': path+'/', 'content': {}}}
-
-        #pages = [pginfo(f) for f in files if self._is_content_file(f)]
-        #folders = [fldinfo(f) for f in folders]
         pages = [(pgname_from_fname(f), {'title': '', 'path': path}) 
                 for f in files if self._is_content_file(f)]
         folders = [(f, {'content': {}, 'path': path}) 
@@ -88,23 +83,28 @@ class SiteMap():
         return filename.endswith(cfg.pages_ext)
 
 
+def make_renderer(layout_name=cfg.templates['default_layout'], page_name=None):
+    default = cfg.templates.get('default_page')
 
-def render_page(page_vars, compile_opts):
-    tplname = compile_opts.get('page_template') 
-    if tplname is None:
-        tplname = cfg.templates['default_page']
+    if page_name is not None:
+        page_template = transform[page_name]
+    elif default is not None:
+        page_template = transform[default]
+    else:
+        raise psException('cannot make renderer, no page template supplied')
 
-    page_content = transform[tplname].render(page_vars)
-    render_layout_and_write(page_vars['name'], page_vars['folder'], page_vars['fullpath'], page_content)
+    layout_template = transform[layout_name]
 
+    def renderer(pg_vars):
+        page_content = page_template.render(pg_vars)
+        nav = ' > '.join(pg_vars['folder'][1:].split('/')) + pg_vars['name']
+        layout_vars = {'content': page_content, 'title': nav}
 
-def render_layout_and_write(page_name, folder, fullpath, content):
-    fname = cfg.out_dir + fullpath
+        fname = cfg.out_dir + pg_vars['fullpath']
+        with open(fname, 'w') as f:
+            f.write(str(layout_template.render(layout_vars)))
 
-    layout_vars = {'content': content, 'title': ' > '.join(folder[1:].split('/'))+page_name}
-
-    with open(fname, 'w') as f:
-        f.write(str(transform[cfg.templates['default_layout']].render(layout_vars)))
+    return renderer
 
 
 def make_html_vars(in_fpath, out_fpath, smap):
@@ -130,9 +130,9 @@ def copy_to_out(rel_file_path):
     copyanything(cfg.site_dir+rel_file_path, cfg.out_dir+rel_file_path)
 
 
-def compile_file(in_fpath, out_fpath, site_map, compile_opts):
+def compile_file(in_fpath, out_fpath, site_map, renderer):
     if out_fpath.endswith('.html'):
-        render_page(make_html_vars(in_fpath, out_fpath, site_map), compile_opts)
+        renderer(make_html_vars(in_fpath, out_fpath, site_map))
     else:
         copy_to_out(in_fpath)
 
@@ -154,7 +154,8 @@ def compile_site():
     def match_and_compile(path):
         try:
             mr = match_rule(path)
-            compile_file(path, mr[0](path), smap.smap, mr[1])
+            renderer = make_renderer(page_name = mr[1].get('page_template'))
+            compile_file(path, mr[0](path), smap.smap, renderer)
         except psException as e:
             pass
 
