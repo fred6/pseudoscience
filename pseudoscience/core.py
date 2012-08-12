@@ -89,13 +89,13 @@ class SiteMap():
 
 
 
-def render_page(page_vars, compile_data):
+def render_page(page_vars, compile_opts):
     tplname = cfg.templates['default_page']
 
     folder = page_vars['folder']
     page_name = page_vars['name']
 
-    tmp = compile_data.get('page_template') 
+    tmp = compile_opts.get('page_template') 
     if tmp is not None:
         tplname = tmp
 
@@ -135,9 +135,9 @@ def copy_to_out(rel_file_path):
     copyanything(cfg.site_dir+rel_file_path, cfg.out_dir+rel_file_path)
 
 
-def compile_file(in_fpath, out_fpath, site_map, compile_data):
+def compile_file(in_fpath, out_fpath, site_map, compile_opts):
     if out_fpath.endswith('.html'):
-        render_page(make_html_vars(in_fpath, out_fpath, site_map), compile_data)
+        render_page(make_html_vars(in_fpath, out_fpath, site_map), compile_opts)
     else:
         copy_to_out(in_fpath)
 
@@ -169,25 +169,6 @@ def compile_site():
         prep_folder(cfg.out_dir+rel_folder)
 
         match_and_compile(rel_folder)
-
-
-        # the logic here should be as follows:
-        # for each file in this directory:
-        #    call the appropriate router
-        #    "compile" the file
-        #
-        # compilation takes the output of the router (the file path to write),
-        # and the file path of the input file and uses some logic to yield output
-        # content. we currently have two cases:
-        #   - verbatim copy
-        #   - parse metadata, run content through pandoc, call a chain of template files
-        # i can see use for a third:
-        #   - compress file (like minifying CSS and java)
-        #   - compile css (using some language like SASS)
-        #
-        # i was thinking about bringing templates under the fold of of 'compilation', but
-        # theres some difficulty. a jinja2 template gets 'compiled' into a compiler.
-        # a reST file gets compiled into raw text
 
         for ef in o[2]:
             fpath = rel_folder+ef
