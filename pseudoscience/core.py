@@ -2,6 +2,7 @@ from sys import exit, argv
 from glob import glob
 import os, re
 from functools import reduce
+from collections import namedtuple
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -10,6 +11,13 @@ from pseudoscience.util import *
 # global vars
 transform = {}
 import config as cfg
+
+# parse rules
+def parse_rules():
+    SiteRule = namedtuple('SiteRule', 'pattern, router, options')
+    cfg.rules = []
+    for r in cfg.r:
+        cfg.rules.append(SiteRule(r[0], r[1], r[2] if len(r) == 3 else {}))
 
 
 # set up transforms (pull all xsls from templates_dir)
@@ -87,10 +95,9 @@ def render_page(page_vars, compile_data):
     folder = page_vars['folder']
     page_name = page_vars['name']
 
-    if compile_data is not None:
-        tmp = compile_data.get('page_template') 
-        if tmp is not None:
-            tplname = tmp
+    tmp = compile_data.get('page_template') 
+    if tmp is not None:
+        tplname = tmp
 
     page_content = transform[tplname].render(page_vars)
     render_layout_and_write(page_name, folder, page_vars['fullpath'], page_content)
@@ -130,7 +137,7 @@ def copy_to_out(rel_file_path):
     copyanything(cfg.site_dir+rel_file_path, cfg.out_dir+rel_file_path)
 
 
-def compile_file(in_fpath, out_fpath, site_map, compile_data=None):
+def compile_file(in_fpath, out_fpath, site_map, compile_data):
     if out_fpath.endswith('.html'):
         render_page(make_html_vars(in_fpath, out_fpath, site_map), compile_data)
     else:
@@ -138,33 +145,26 @@ def compile_file(in_fpath, out_fpath, site_map, compile_data=None):
 
 
 def match_rule(fpath):
-    print()
-    print('# Match-rule ', end='')
-    print(fpath)
-    for r in cfg.r:
+    for r in cfg.rules:
         restr = '\A' + r[0].replace('.', '\.').replace('*', '.+') + '\Z'
-        print('     '+restr)
         if re.match(restr, fpath):
-            print('Matched!!!!!!', end='')
-            print(r)
-            return [globals()[r[1]]] + r[2:]
+            return (globals()[r.router], r.options)
 
     raise psException('no route found')
 
 
 def compile_site():
     create_transforms()
+    parse_rules()
     smap = SiteMap()
 
     def match_and_compile(path):
         try:
             mr = match_rule(path)
             if len(mr) == 1:
-                compile_file(path, mr[0](path), smap.smap)
-            else:
-                compile_file(path, mr[0](path), smap.smap, compile_data=mr[1])
+                compile_file(path, mr[0](path), smap.smap, mr[1])
         except psException as e:
-            print(e.value)
+            pass
 
     for o in os.walk(cfg.site_dir):
         rel_folder = o[0].replace(cfg.site_dir, '') + '/'
