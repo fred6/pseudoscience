@@ -1,4 +1,3 @@
- - implement compiler stuff in config
  - metadata
  - tags/categories
  - add "draft" capability, i.e. pages in site/ that dont get compiled
