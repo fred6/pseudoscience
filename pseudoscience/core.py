@@ -1,29 +1,11 @@
 from sys import exit, argv
 from glob import glob
-import os
+import os, re
 from functools import reduce
 
 from jinja2 import Environment, FileSystemLoader
 
 from pseudoscience.util import *
-################
-## philosophy ##
-################
-# hakyll's notion of  fully general compilation rules where you pass around
-# a compiler function that tells you how the document should be compiled
-# (and where you have to specify an identity compilation function in order to
-# copy, say a css file over) is obviously pretty powerful. but in practice
-# there are only two compilation possibilities that I want to handle:
-# 
-#   - copy the file over verbatim
-#   - parse the meta data, run the body through pandoc
-#
-# it might be wise to set up some infrastructure to be able to extend towards
-# fully general compilation rules in the future, but honestly it seems pointless
-# to actually implement.
-#
-# So in reality, the 'rules' we specify in config, we can get by with just specifying
-# routing rules and which templates to use
 
 # global vars
 transform = {}
@@ -56,61 +38,10 @@ def index_router(fpath):
     return fpath+'index.html'
 
 
-
-
-def render_page(page_vars):
-    # if folder matches a select in the render_rules
-    # then use whatever templates are specified there
-    tplname = cfg.templates['default_page']
-
-    folder = page_vars['folder']
-    page_name = page_vars['name']
-
-    match_folder = folder+'*'
-    match_page = folder+page_name
-    for match in [match_folder, match_page]:
-        if cfg.render_rules.get(match) is not None:
-            if cfg.render_rules[match].get('page_template') is not None:
-                tplname = cfg.render_rules[match]['page_template']
-
-    page_content = transform[tplname].render(page_vars)
-    render_layout_and_write(page_name, folder, page_vars['fullpath'], page_content)
-
-
-def render_layout_and_write(page_name, folder, fullpath, content):
-    fname = cfg.out_dir + fullpath
-
-    layout_vars = {'content': content, 'title': ' > '.join(folder[1:].split('/'))+page_name}
-
-    f = open(fname, 'w')
-    f.write(str(transform[cfg.templates['default_layout']].render(layout_vars)))
-    f.close()
-
-
-def compile_page(in_fpath, out_fpath):
-    file = open(cfg.site_dir+in_fpath, 'r')
-    content = file.read()
-    file.close()
-
-    last_slash = out_fpath.rindex('/')
-
-    pg = {'name': out_fpath[last_slash+1:out_fpath.index('.')],
-          'folder': out_fpath[:last_slash+1],
-          'fullpath': out_fpath,
-          'content': bytes.decode(convert(content, cfg.page_format, 'html'))}
-
-    render_page(pg)
-
-
-def compile_index(out_fpath, smap):
-    last_slash = out_fpath.rindex('/')
-    index_vars = {
-            'name': out_fpath[last_slash+1:out_fpath.index('.')],
-            'folder': out_fpath[:last_slash+1],
-            'fullpath': out_fpath,
-            'map': smap}
-    render_page(index_vars)
-
+# Pseudoscience exception
+class psException(Exception):
+    def __init__(self, value):
+        self.value = value
 
 
 class SiteMap():
@@ -150,18 +81,75 @@ class SiteMap():
 
 
 
+def render_page(page_vars, compile_data):
+    tplname = cfg.templates['default_page']
+
+    folder = page_vars['folder']
+    page_name = page_vars['name']
+
+    if compile_data is not None:
+        tmp = compile_data.get('page_template') 
+        if tmp is not None:
+            tplname = tmp
+
+    page_content = transform[tplname].render(page_vars)
+    render_layout_and_write(page_name, folder, page_vars['fullpath'], page_content)
+
+
+def render_layout_and_write(page_name, folder, fullpath, content):
+    fname = cfg.out_dir + fullpath
+
+    layout_vars = {'content': content, 'title': ' > '.join(folder[1:].split('/'))+page_name}
+
+    f = open(fname, 'w')
+    f.write(str(transform[cfg.templates['default_layout']].render(layout_vars)))
+    f.close()
+
+
+def make_html_vars(in_fpath, out_fpath, smap):
+    content = None
+    if not in_fpath.endswith('/'):
+        file = open(cfg.site_dir+in_fpath, 'r')
+        content = file.read()
+        file.close()
+
+    last_slash = out_fpath.rindex('/')
+    pv = {
+            'name': out_fpath[last_slash+1:out_fpath.index('.')],
+            'folder': out_fpath[:last_slash+1],
+            'fullpath': out_fpath,
+            'map': smap}
+
+    if content is not None:
+        pv['content'] = bytes.decode(convert(content, cfg.page_format, 'html'))
+
+    return pv
+
+
 def copy_to_out(rel_file_path):
     copyanything(cfg.site_dir+rel_file_path, cfg.out_dir+rel_file_path)
 
 
-
-def compile_file(in_fpath, out_fpath, site_map):
-    if in_fpath == '/':
-        compile_index(out_fpath, site_map)
-    elif in_fpath.endswith(cfg.pages_ext):
-        compile_page(in_fpath, out_fpath)
+def compile_file(in_fpath, out_fpath, site_map, compile_data=None):
+    if out_fpath.endswith('.html'):
+        render_page(make_html_vars(in_fpath, out_fpath, site_map), compile_data)
     else:
         copy_to_out(in_fpath)
+
+
+def match_rule(fpath):
+    print()
+    print('# Match-rule ', end='')
+    print(fpath)
+    for r in cfg.r:
+        restr = '\A' + r[0].replace('.', '\.').replace('*', '.+') + '\Z'
+        print('     '+restr)
+        if re.match(restr, fpath):
+            print('Matched!!!!!!', end='')
+            print(r)
+            return [globals()[r[1]]] + r[2:]
+
+    raise psException('no route found')
 
 
 def compile_site():
@@ -173,8 +161,14 @@ def compile_site():
 
         prep_folder(cfg.out_dir+rel_folder)
 
-        if rel_folder == '/':
-            compile_file(rel_folder, index_router(rel_folder), smap.smap)
+        try:
+            mr = match_rule(rel_folder)
+            if len(mr) == 1:
+                compile_file(rel_folder, mr[0](rel_folder), smap.smap)
+            else:
+                compile_file(rel_folder, mr[0](rel_folder), smap.smap, compile_data=mr[1])
+        except psException as e:
+            print(e.value)
 
         # the logic here should be as follows:
         # for each file in this directory:
@@ -196,9 +190,13 @@ def compile_site():
 
         for ef in o[2]:
             fpath = rel_folder+ef
-            if fpath.endswith(cfg.pages_ext):
-                route_out = page_router(fpath)
-            else:
-                route_out = id_router(fpath)
 
-            compile_file(fpath, route_out, smap.smap)
+            try:
+                mr = match_rule(fpath)
+
+                if len(mr) == 1:
+                    compile_file(fpath, mr[0](fpath), smap.smap)
+                else:
+                    compile_file(fpath, mr[0](fpath), smap.smap, compile_data=mr[1])
+            except psException as e:
+                print(e.value)
