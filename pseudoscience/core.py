@@ -156,19 +156,23 @@ def compile_site():
     create_transforms()
     smap = SiteMap()
 
+    def match_and_compile(path):
+        try:
+            mr = match_rule(path)
+            if len(mr) == 1:
+                compile_file(path, mr[0](path), smap.smap)
+            else:
+                compile_file(path, mr[0](path), smap.smap, compile_data=mr[1])
+        except psException as e:
+            print(e.value)
+
     for o in os.walk(cfg.site_dir):
         rel_folder = o[0].replace(cfg.site_dir, '') + '/'
 
         prep_folder(cfg.out_dir+rel_folder)
 
-        try:
-            mr = match_rule(rel_folder)
-            if len(mr) == 1:
-                compile_file(rel_folder, mr[0](rel_folder), smap.smap)
-            else:
-                compile_file(rel_folder, mr[0](rel_folder), smap.smap, compile_data=mr[1])
-        except psException as e:
-            print(e.value)
+        match_and_compile(rel_folder)
+
 
         # the logic here should be as follows:
         # for each file in this directory:
@@ -190,13 +194,4 @@ def compile_site():
 
         for ef in o[2]:
             fpath = rel_folder+ef
-
-            try:
-                mr = match_rule(fpath)
-
-                if len(mr) == 1:
-                    compile_file(fpath, mr[0](fpath), smap.smap)
-                else:
-                    compile_file(fpath, mr[0](fpath), smap.smap, compile_data=mr[1])
-            except psException as e:
-                print(e.value)
+            match_and_compile(fpath)
