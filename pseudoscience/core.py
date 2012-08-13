@@ -64,7 +64,9 @@ class SiteMap():
             parent_folder['folders'][path_list[-1]]['content'] = folder_dict 
 
     def _is_content_file(self, filename):
-        return filename.endswith(cfg.pages_ext)
+        page_extensions = ['.md', '.rst']
+        ext = filename[filename.index('.'):]
+        return ext in page_extensions
 
 
 def make_html_vars(in_fpath, out_fpath, smap):
