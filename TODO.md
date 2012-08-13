@@ -1,4 +1,5 @@
+ - make "identity renderer" for files that just get copied straight out. add this configuration to config.py
  - metadata
  - tags/categories
  - add "draft" capability, i.e. pages in site/ that dont get compiled
- - test non-markdown posting
+ - dont set the markup in config. have the page compiler autodetect. need to extend matching in config? i.e. instead of doing *.md as the page compiler, do *.md *.rst? Or some kind of *.[page] special symbol so we can tell that for all other pages. or move favicon.ico to images/ and use a proper link. fuck the 404
