@@ -16,7 +16,7 @@ def parse_rules():
 
 
 # chop off the (first) file extension
-pgname_from_fname = lambda f: f[:f.index('.')]
+pgname_from_fname = lambda f: f[:f.find('.')]
 
 
 # Routers
@@ -67,8 +67,11 @@ class SiteMap():
 # helper
 def file_is_page(filename):
     page_extensions = ['.md', '.rst']
-    ext = filename[filename.index('.'):]
-    return ext in page_extensions
+    if '.' in filename:
+        ext = filename[filename.index('.'):]
+        return ext in page_extensions
+    else:
+        return False
 
 
 def parse_file(in_fpath, out_fpath):
@@ -78,7 +81,7 @@ def parse_file(in_fpath, out_fpath):
             'folder': out_fpath[:last_slash+1],
             'fullpath': out_fpath}
 
-    if not file_is_page(in_fpath):
+    if file_is_page(in_fpath):
         with open(cfg.site_dir+in_fpath, 'r') as file:
             content = file.read()
             in_format = 'markdown' if in_fpath[in_fpath.index('.'):] == '.md' else 'rst'
@@ -92,8 +95,9 @@ def copy_to_out(rel_file_path):
 
 
 def compile_file(in_fpath, out_fpath, site_map, renderer):
+    print('compile_file: '+in_fpath+';'+out_fpath)
     if out_fpath.endswith('.html'):
-        parse_res = parse_file(in_fpath, out_fpath, site_map)
+        parse_res = parse_file(in_fpath, out_fpath)
         parse_res['map'] = site_map
         renderer(parse_res)
     else:
