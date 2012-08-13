@@ -71,21 +71,18 @@ def file_is_page(filename):
     return ext in page_extensions
 
 
-
 def parse_file(in_fpath, out_fpath):
-    content = None
-    if not file_is_page(in_fpath):
-        with open(cfg.site_dir+in_fpath, 'r') as file:
-            content = file.read()
-
     last_slash = out_fpath.rindex('/')
     pv = {
             'name': out_fpath[last_slash+1:out_fpath.index('.')],
             'folder': out_fpath[:last_slash+1],
             'fullpath': out_fpath}
 
-    if content is not None:
-        pv['content'] = bytes.decode(convert(content, cfg.page_format, 'html'))
+    if not file_is_page(in_fpath):
+        with open(cfg.site_dir+in_fpath, 'r') as file:
+            content = file.read()
+            in_format = 'markdown' if in_fpath[in_fpath.index('.'):] == '.md' else 'rst'
+            pv['content'] = bytes.decode(convert(content, in_format, 'html'))
 
     return pv
 
