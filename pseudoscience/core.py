@@ -47,7 +47,7 @@ class SiteMap():
 
     def add_to_map(self, path, folders, files):
         pages = [(pgname_from_fname(f), {'title': '', 'path': path}) 
-                for f in files if self._is_content_file(f)]
+                for f in files if file_is_page(f)]
         folders = [(f, {'content': {}, 'path': path}) 
                 for f in folders]
         folder_dict = {'pages': dict(pages), 'folders': dict(folders)}
@@ -63,15 +63,18 @@ class SiteMap():
             parent_folder = reduce(lambda D, k: D['folders'][k], path_list[:-1], self.smap)
             parent_folder['folders'][path_list[-1]]['content'] = folder_dict 
 
-    def _is_content_file(self, filename):
-        page_extensions = ['.md', '.rst']
-        ext = filename[filename.index('.'):]
-        return ext in page_extensions
+
+# helper
+def file_is_page(filename):
+    page_extensions = ['.md', '.rst']
+    ext = filename[filename.index('.'):]
+    return ext in page_extensions
+
 
 
 def make_html_vars(in_fpath, out_fpath, smap):
     content = None
-    if not in_fpath.endswith('/'):
+    if not file_is_page(in_fpath):
         with open(cfg.site_dir+in_fpath, 'r') as file:
             content = file.read()
 
