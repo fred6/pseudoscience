@@ -15,8 +15,8 @@ def parse_rules():
         cfg.rules.append(SiteRule(r[0], r[1], r[2] if len(r) == 3 else cfg.templates['default_page']))
 
 
-# chop off the markdown file extension
-pgname_from_fname = lambda f: f[:f.find(cfg.pages_ext)]
+# chop off the (first) file extension
+pgname_from_fname = lambda f: f[:f.index('.')]
 
 
 # Routers
