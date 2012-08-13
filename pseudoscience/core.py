@@ -72,7 +72,7 @@ def file_is_page(filename):
 
 
 
-def make_html_vars(in_fpath, out_fpath, smap):
+def parse_file(in_fpath, out_fpath, smap):
     content = None
     if not file_is_page(in_fpath):
         with open(cfg.site_dir+in_fpath, 'r') as file:
@@ -97,7 +97,7 @@ def copy_to_out(rel_file_path):
 
 def compile_file(in_fpath, out_fpath, site_map, renderer):
     if out_fpath.endswith('.html'):
-        renderer(make_html_vars(in_fpath, out_fpath, site_map))
+        renderer(parse_file(in_fpath, out_fpath, site_map))
     else:
         copy_to_out(in_fpath)
 
