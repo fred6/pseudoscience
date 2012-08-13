@@ -72,7 +72,7 @@ def file_is_page(filename):
 
 
 
-def parse_file(in_fpath, out_fpath, smap):
+def parse_file(in_fpath, out_fpath):
     content = None
     if not file_is_page(in_fpath):
         with open(cfg.site_dir+in_fpath, 'r') as file:
@@ -82,8 +82,7 @@ def parse_file(in_fpath, out_fpath, smap):
     pv = {
             'name': out_fpath[last_slash+1:out_fpath.index('.')],
             'folder': out_fpath[:last_slash+1],
-            'fullpath': out_fpath,
-            'map': smap}
+            'fullpath': out_fpath}
 
     if content is not None:
         pv['content'] = bytes.decode(convert(content, cfg.page_format, 'html'))
@@ -97,7 +96,9 @@ def copy_to_out(rel_file_path):
 
 def compile_file(in_fpath, out_fpath, site_map, renderer):
     if out_fpath.endswith('.html'):
-        renderer(parse_file(in_fpath, out_fpath, site_map))
+        parse_res = parse_file(in_fpath, out_fpath, site_map)
+        parse_res['map'] = site_map
+        renderer(parse_res)
     else:
         copy_to_out(in_fpath)
 
