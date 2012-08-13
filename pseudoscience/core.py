@@ -110,7 +110,7 @@ def compile_site():
 
     def match_rule(fpath):
         for r in cfg.rules:
-            restr = '\A' + r[0].replace('.', '\.').replace('*', '.+') + '\Z'
+            restr = '\A' + r[0].replace('.', '\.').replace('*', '[^/]+') + '\Z'
             if re.match(restr, fpath):
                 return (globals()[r.router], renderers[r.renderer])
 
