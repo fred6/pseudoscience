@@ -6,6 +6,12 @@ from jinja2 import Environment, FileSystemLoader
 from pseudoscience.util import *
 
 
+def config_renderers(cfg):
+    renderers = jinja2_renderers(cfg, smap.smap)
+    renderers['_id'] = make_id_renderer(cfg)
+    return renderers
+
+
 def jinja2_renderers(cfg, site_map):
     env = Environment(loader=FileSystemLoader(cfg.templates_dir, encoding='utf-8'))
     tplext = '.html'

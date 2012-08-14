@@ -3,7 +3,7 @@ from functools import reduce
 from collections import namedtuple
 
 from pseudoscience.util import *
-from pseudoscience.renderers import jinja2_renderers, make_id_renderer, convert
+from pseudoscience.renderers import config_renderers, convert
 
 import config as cfg
 
@@ -11,22 +11,6 @@ import config as cfg
 class psException(Exception):
     def __init__(self, value):
         self.value = value
-
-
-# parse rules
-def parse_rules(renderers):
-    SiteRule = namedtuple('SiteRule', 'pattern, router, renderer')
-    cfg.rules = []
-    for r in cfg.r:
-        if r[2][0] == 'id':
-            renderer = renderers['_id']
-        elif r[2][0] == 'page':
-            if len(r[2]) == 2:
-                renderer = renderers[r[2][1]]
-            else:
-                renderer = renderers[cfg.templates['default_page']]
-
-        cfg.rules.append(SiteRule(r[0], globals()[r[1]], renderer))
 
 
 # chop off the (first) file extension
@@ -100,12 +84,27 @@ def match_and_compile(path):
         pass
 
 
-def compile_site():
+# parse rules
+def parse_rules(renderers):
+    SiteRule = namedtuple('SiteRule', 'pattern, router, renderer')
+    cfg.rules = []
+    for r in cfg.r:
+        if r[2][0] == 'id':
+            renderer = renderers['_id']
+        elif r[2][0] == 'page':
+            if len(r[2]) == 2:
+                renderer = renderers[r[2][1]]
+            else:
+                renderer = renderers[cfg.templates['default_page']]
+
+        cfg.rules.append(SiteRule(r[0], globals()[r[1]], renderer))
+
+
+def compile_Site():
     smap = SiteMap()
 
     # establish renderers
-    renderers = jinja2_renderers(cfg, smap.smap)
-    renderers['_id'] = make_id_renderer(cfg)
+    config_renderers(cfg)
 
     parse_rules(renderers)
 
