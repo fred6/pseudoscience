@@ -7,10 +7,3 @@ def rmanything(thing):
         if exc.errno == errno.ENOTDIR:
             os.remove(thing)
         else: raise
-
-# Pseudoscience exception
-class psException(Exception):
-    def __init__(self, value):
-        self.value = value
-
-

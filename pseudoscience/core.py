@@ -7,6 +7,12 @@ from pseudoscience.renderers import jinja2_renderers, make_id_renderer, convert
 
 import config as cfg
 
+# Pseudoscience exception
+class psException(Exception):
+    def __init__(self, value):
+        self.value = value
+
+
 # parse rules
 def parse_rules(renderers):
     SiteRule = namedtuple('SiteRule', 'pattern, router, renderer')
