@@ -3,7 +3,7 @@ from glob import glob
 
 from jinja2 import Environment, FileSystemLoader
 
-def jinja2_renderers(cfg):
+def jinja2_renderers(cfg, site_map):
     env = Environment(loader=FileSystemLoader(cfg.templates_dir, encoding='utf-8'))
     tplext = '.html'
 
@@ -11,6 +11,7 @@ def jinja2_renderers(cfg):
 
     def make_renderer(page_template):
         def renderer(pg_vars):
+            pg_vars['map'] = site_map
             page_content = page_template.render(pg_vars)
             nav = ' > '.join(pg_vars['folder'][1:].split('/')) + pg_vars['name']
             layout_vars = {'content': page_content, 'title': nav}

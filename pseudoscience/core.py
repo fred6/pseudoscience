@@ -96,11 +96,10 @@ def copy_to_out(rel_file_path):
     copyanything(cfg.site_dir+rel_file_path, cfg.out_dir+rel_file_path)
 
 
-def compile_file(in_fpath, out_fpath, site_map, renderer):
+def compile_file(in_fpath, out_fpath, renderer):
     print('compile_file: '+in_fpath+';'+out_fpath)
     if out_fpath.endswith('.html'):
         parse_res = parse_file(in_fpath, out_fpath)
-        parse_res['map'] = site_map
         renderer(parse_res)
     else:
         renderer(in_fpath, out_fpath)
@@ -114,7 +113,7 @@ def match_rule(fpath):
 
     raise psException('no route found')
 
-def match_and_compile(path, smap):
+def match_and_compile(path):
     try:
         mr = match_rule(path)
         out_path = mr[0](path)
@@ -127,25 +126,26 @@ def match_and_compile(path, smap):
                 os.path.getmtime(in_file) > os.path.getmtime(out_file))
 
         if should_compile_file(path, out_path):
-            compile_file(path, out_path, smap.smap, mr[1])
+            compile_file(path, out_path, mr[1])
 
     except psException as e:
         pass
 
 
 def compile_site():
+    smap = SiteMap()
+
     # establish renderers
-    renderers = jinja2_renderers(cfg)
+    renderers = jinja2_renderers(cfg, smap.smap)
     renderers['_id'] = make_id_renderer(cfg)
 
     parse_rules(renderers)
-    smap = SiteMap()
 
     # compile input folder
     for o in os.walk(cfg.site_dir):
         rel_folder = o[0].replace(cfg.site_dir, '') + '/'
-        match_and_compile(rel_folder, smap)
+        match_and_compile(rel_folder)
 
         for ef in o[2]:
             fpath = rel_folder+ef
-            match_and_compile(fpath, smap)
+            match_and_compile(fpath)
