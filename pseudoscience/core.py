@@ -26,7 +26,7 @@ def parse_rules(renderers):
             else:
                 renderer = renderers[cfg.templates['default_page']]
 
-        cfg.rules.append(SiteRule(r[0], r[1], renderer))
+        cfg.rules.append(SiteRule(r[0], globals()[r[1]], renderer))
 
 
 # chop off the (first) file extension
@@ -75,7 +75,7 @@ def match_rule(fpath):
     for r in cfg.rules:
         restr = '\A' + r[0].replace('.', '\.').replace('*', '[^/]+') + '\Z'
         if re.match(restr, fpath):
-            return (globals()[r.router], r.renderer)
+            return (r.router, r.renderer)
 
     raise psException('no route found')
 
