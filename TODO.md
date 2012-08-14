@@ -1,3 +1,5 @@
+ - encapsulate file writing into one thing so we dont import os and do all this folder existence checking in multiple places
+ - if a template changes you have to recompile all the files that utilize that template
  - make "identity renderer" for files that just get copied straight out. add this configuration to config.py
  - metadata
  - tags/categories
