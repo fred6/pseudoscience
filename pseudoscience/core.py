@@ -75,7 +75,7 @@ def match_rule(fpath):
     for r in cfg.rules:
         restr = '\A' + r[0].replace('.', '\.').replace('*', '[^/]+') + '\Z'
         if re.match(restr, fpath):
-            return (r.router, r.renderer)
+            return r
 
     raise psException('no route found')
 
@@ -83,7 +83,7 @@ def match_rule(fpath):
 def match_and_compile(path):
     try:
         mr = match_rule(path)
-        out_path = mr[0](path)
+        out_path = mr.router(path)
 
         def should_compile_file(in_path, out_path):
             in_file = cfg.site_dir + in_path
@@ -94,7 +94,7 @@ def match_and_compile(path):
 
         if should_compile_file(path, out_path):
             print('compiling: '+path+'; '+out_path)
-            mr[1](path, out_path)
+            mr.renderer(path, out_path)
 
     except psException as e:
         pass
