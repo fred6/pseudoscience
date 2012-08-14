@@ -16,6 +16,10 @@ def copyanything(src, dst):
         shutil.copytree(src, dst)
     except OSError as exc:
         if exc.errno == errno.ENOTDIR:
+            folder = dst[:dst.rindex('/')+1]
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+
             shutil.copy(src, dst)
         else: raise
 
@@ -26,12 +30,3 @@ def rmanything(thing):
         if exc.errno == errno.ENOTDIR:
             os.remove(thing)
         else: raise
-
-def prep_folder(folder):
-    # make output directory if it doesnt exist
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    # clean out old files
-    for f in os.listdir(folder):
-        rmanything(folder+f)

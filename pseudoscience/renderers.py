@@ -1,3 +1,4 @@
+import os
 from glob import glob
 
 from jinja2 import Environment, FileSystemLoader
@@ -15,6 +16,11 @@ def jinja2_renderers(cfg):
             layout_vars = {'content': page_content, 'title': nav}
 
             fname = cfg.out_dir + pg_vars['fullpath']
+
+            folder = cfg.out_dir + pg_vars['folder']
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+
             with open(fname, 'w') as f:
                 f.write(str(layout_tpl.render(layout_vars)))
 

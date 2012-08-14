@@ -119,7 +119,18 @@ def compile_site():
     def match_and_compile(path):
         try:
             mr = match_rule(path)
-            compile_file(path, mr[0](path), smap.smap, mr[1])
+            out_path = mr[0](path)
+
+            def should_compile_file(in_path, out_path):
+                in_file = cfg.site_dir + in_path
+                out_file = cfg.out_dir + out_path
+
+                return (not os.path.exists(out_file) or 
+                    os.path.getmtime(in_file) > os.path.getmtime(out_file))
+
+            if should_compile_file(path, out_path):
+                compile_file(path, out_path, smap.smap, mr[1])
+
         except psException as e:
             pass
 
@@ -129,8 +140,6 @@ def compile_site():
     # compile input folder
     for o in os.walk(cfg.site_dir):
         rel_folder = o[0].replace(cfg.site_dir, '') + '/'
-        prep_folder(cfg.out_dir+rel_folder)
-
         match_and_compile(rel_folder)
 
         for ef in o[2]:
