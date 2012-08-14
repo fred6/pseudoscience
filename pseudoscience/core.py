@@ -7,6 +7,8 @@ from pseudoscience.renderers import jinja2_renderers
 
 import config as cfg
 
+renderers = {}
+
 # parse rules
 def parse_rules():
     SiteRule = namedtuple('SiteRule', 'pattern, router, renderer')
@@ -16,7 +18,7 @@ def parse_rules():
 
 
 # chop off the (first) file extension
-pgname_from_fname = lambda f: f[:f.find('.')]
+chop_file_ext = lambda f: f[:f.find('.')]
 
 
 # Routers
@@ -24,16 +26,10 @@ def id_router(fpath):
     return fpath
 
 def page_router(fpath):
-    return pgname_from_fname(fpath)+'.html'
+    return chop_file_ext(fpath)+'.html'
 
 def index_router(fpath):
     return fpath+'index.html'
-
-
-# Pseudoscience exception
-class psException(Exception):
-    def __init__(self, value):
-        self.value = value
 
 
 class SiteMap():
@@ -46,7 +42,7 @@ class SiteMap():
 
 
     def add_to_map(self, path, folders, files):
-        pages = [(pgname_from_fname(f), {'title': '', 'path': path}) 
+        pages = [(chop_file_ext(f), {'title': '', 'path': path}) 
                 for f in files if file_is_page(f)]
         folders = [(f, {'content': {}, 'path': path}) 
                 for f in folders]
@@ -104,35 +100,37 @@ def compile_file(in_fpath, out_fpath, site_map, renderer):
         copy_to_out(in_fpath)
 
 
+def match_rule(fpath):
+    for r in cfg.rules:
+        restr = '\A' + r[0].replace('.', '\.').replace('*', '[^/]+') + '\Z'
+        if re.match(restr, fpath):
+            return (globals()[r.router], renderers[r.renderer])
+
+    raise psException('no route found')
+
+def match_and_compile(path):
+    try:
+        mr = match_rule(path)
+        out_path = mr[0](path)
+
+        def should_compile_file(in_path, out_path):
+            in_file = cfg.site_dir + in_path
+            out_file = cfg.out_dir + out_path
+
+            return (not os.path.exists(out_file) or 
+                os.path.getmtime(in_file) > os.path.getmtime(out_file))
+
+        if should_compile_file(path, out_path):
+            compile_file(path, out_path, smap.smap, mr[1])
+
+    except psException as e:
+        pass
+
+
 def compile_site():
     # establish renderers
+    global renderers
     renderers = jinja2_renderers(cfg)
-
-    def match_rule(fpath):
-        for r in cfg.rules:
-            restr = '\A' + r[0].replace('.', '\.').replace('*', '[^/]+') + '\Z'
-            if re.match(restr, fpath):
-                return (globals()[r.router], renderers[r.renderer])
-
-        raise psException('no route found')
-
-    def match_and_compile(path):
-        try:
-            mr = match_rule(path)
-            out_path = mr[0](path)
-
-            def should_compile_file(in_path, out_path):
-                in_file = cfg.site_dir + in_path
-                out_file = cfg.out_dir + out_path
-
-                return (not os.path.exists(out_file) or 
-                    os.path.getmtime(in_file) > os.path.getmtime(out_file))
-
-            if should_compile_file(path, out_path):
-                compile_file(path, out_path, smap.smap, mr[1])
-
-        except psException as e:
-            pass
 
     parse_rules()
     smap = SiteMap()
