@@ -3,18 +3,24 @@ from functools import reduce
 from collections import namedtuple
 
 from pseudoscience.util import *
-from pseudoscience.renderers import jinja2_renderers
+from pseudoscience.renderers import jinja2_renderers, make_id_renderer, convert
 
 import config as cfg
 
-renderers = {}
-
 # parse rules
-def parse_rules():
+def parse_rules(renderers):
     SiteRule = namedtuple('SiteRule', 'pattern, router, renderer')
     cfg.rules = []
     for r in cfg.r:
-        cfg.rules.append(SiteRule(r[0], r[1], r[2] if len(r) == 3 else cfg.templates['default_page']))
+        if r[2][0] == 'id':
+            renderer = renderers['_id']
+        elif r[2][0] == 'page':
+            if len(r[2]) == 2:
+                renderer = renderers[r[2][1]]
+            else:
+                renderer = renderers[cfg.templates['default_page']]
+
+        cfg.rules.append(SiteRule(r[0], r[1], renderer))
 
 
 # chop off the (first) file extension
@@ -97,18 +103,18 @@ def compile_file(in_fpath, out_fpath, site_map, renderer):
         parse_res['map'] = site_map
         renderer(parse_res)
     else:
-        copy_to_out(in_fpath)
+        renderer(in_fpath, out_fpath)
 
 
 def match_rule(fpath):
     for r in cfg.rules:
         restr = '\A' + r[0].replace('.', '\.').replace('*', '[^/]+') + '\Z'
         if re.match(restr, fpath):
-            return (globals()[r.router], renderers[r.renderer])
+            return (globals()[r.router], r.renderer)
 
     raise psException('no route found')
 
-def match_and_compile(path):
+def match_and_compile(path, smap):
     try:
         mr = match_rule(path)
         out_path = mr[0](path)
@@ -129,17 +135,17 @@ def match_and_compile(path):
 
 def compile_site():
     # establish renderers
-    global renderers
     renderers = jinja2_renderers(cfg)
+    renderers['_id'] = make_id_renderer(cfg)
 
-    parse_rules()
+    parse_rules(renderers)
     smap = SiteMap()
 
     # compile input folder
     for o in os.walk(cfg.site_dir):
         rel_folder = o[0].replace(cfg.site_dir, '') + '/'
-        match_and_compile(rel_folder)
+        match_and_compile(rel_folder, smap)
 
         for ef in o[2]:
             fpath = rel_folder+ef
-            match_and_compile(fpath)
+            match_and_compile(fpath, smap)
