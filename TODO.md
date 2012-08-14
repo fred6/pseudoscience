@@ -1,7 +1,6 @@
  - move convert() to renderer? i think markdown/rst => html output should be part of the renderer
- - encapsulate file writing into one thing so we dont import os and do all this folder existence checking in multiple places
  - if a template changes you have to recompile all the files that utilize that template
- - make "identity renderer" for files that just get copied straight out. add this configuration to config.py
+ - remove files from out_dir that are not legitimate outputs of compilation (i.e. a file is compiled to a.html, then rerouted to b.html and recompiled. a.html should be deleted)
  - metadata
  - tags/categories
  - add "draft" capability, i.e. pages in site/ that dont get compiled
