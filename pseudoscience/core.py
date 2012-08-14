@@ -49,7 +49,6 @@ class SiteMap():
         self.smap = {}
         for o in os.walk(cfg.site_dir):
             rel_folder = o[0].replace(cfg.site_dir, '') + '/'
-
             self.add_to_map(rel_folder, o[1], o[2])
 
 
@@ -72,45 +71,6 @@ class SiteMap():
             parent_folder['folders'][path_list[-1]]['content'] = folder_dict 
 
 
-# helper
-def file_is_page(filename):
-    page_extensions = ['.md', '.rst']
-    if '.' in filename:
-        ext = filename[filename.index('.'):]
-        return ext in page_extensions
-    else:
-        return False
-
-
-def parse_file(in_fpath, out_fpath):
-    last_slash = out_fpath.rindex('/')
-    pv = {
-            'name': out_fpath[last_slash+1:out_fpath.index('.')],
-            'folder': out_fpath[:last_slash+1],
-            'fullpath': out_fpath}
-
-    if file_is_page(in_fpath):
-        with open(cfg.site_dir+in_fpath, 'r') as file:
-            content = file.read()
-            in_format = 'markdown' if in_fpath[in_fpath.index('.'):] == '.md' else 'rst'
-            pv['content'] = bytes.decode(convert(content, in_format, 'html'))
-
-    return pv
-
-
-def copy_to_out(rel_file_path):
-    copyanything(cfg.site_dir+rel_file_path, cfg.out_dir+rel_file_path)
-
-
-def compile_file(in_fpath, out_fpath, renderer):
-    print('compile_file: '+in_fpath+';'+out_fpath)
-    if out_fpath.endswith('.html'):
-        parse_res = parse_file(in_fpath, out_fpath)
-        renderer(parse_res)
-    else:
-        renderer(in_fpath, out_fpath)
-
-
 def match_rule(fpath):
     for r in cfg.rules:
         restr = '\A' + r[0].replace('.', '\.').replace('*', '[^/]+') + '\Z'
@@ -118,6 +78,7 @@ def match_rule(fpath):
             return (globals()[r.router], r.renderer)
 
     raise psException('no route found')
+
 
 def match_and_compile(path):
     try:
@@ -132,7 +93,8 @@ def match_and_compile(path):
                 os.path.getmtime(in_file) > os.path.getmtime(out_file))
 
         if should_compile_file(path, out_path):
-            compile_file(path, out_path, mr[1])
+            print('compiling: '+path+'; '+out_path)
+            mr[1](path, out_path)
 
     except psException as e:
         pass
