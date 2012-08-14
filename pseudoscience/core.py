@@ -55,39 +55,23 @@ class SiteMap():
             parent_folder['folders'][path_list[-1]]['content'] = folder_dict 
 
 
-def match_rule(fpath):
-    for r in cfg.rules:
-        restr = '\A' + r[0].replace('.', '\.').replace('*', '[^/]+') + '\Z'
-        if re.match(restr, fpath):
-            return r
+def make_rule_matcher(renderers):
+    rules = parse_rules(renderers)
 
-    raise psException('no route found')
+    def match_rule(fpath):
+        for r in rules:
+            restr = '\A' + r[0].replace('.', '\.').replace('*', '[^/]+') + '\Z'
+            if re.match(restr, fpath):
+                return r
 
+        raise psException('no route found')
 
-def match_and_compile(path):
-    try:
-        mr = match_rule(path)
-        out_path = mr.router(path)
-
-        def should_compile_file(in_path, out_path):
-            in_file = cfg.site_dir + in_path
-            out_file = cfg.out_dir + out_path
-
-            return (not os.path.exists(out_file) or 
-                os.path.getmtime(in_file) > os.path.getmtime(out_file))
-
-        if should_compile_file(path, out_path):
-            print('compiling: '+path+'; '+out_path)
-            mr.renderer(path, out_path)
-
-    except psException as e:
-        pass
+    return match_rule
 
 
-# parse rules
 def parse_rules(renderers):
     SiteRule = namedtuple('SiteRule', 'pattern, router, renderer')
-    cfg.rules = []
+    rules = []
     for r in cfg.r:
         if r[2][0] == 'id':
             renderer = renderers['_id']
@@ -97,16 +81,39 @@ def parse_rules(renderers):
             else:
                 renderer = renderers[cfg.templates['default_page']]
 
-        cfg.rules.append(SiteRule(r[0], globals()[r[1]], renderer))
+        rules.append(SiteRule(r[0], globals()[r[1]], renderer))
+
+    return rules
 
 
-def compile_Site():
-    smap = SiteMap()
+def macmaker(rule_matcher):
+    def should_compile_file(in_path, out_path):
+        in_file = cfg.site_dir + in_path
+        out_file = cfg.out_dir + out_path
 
-    # establish renderers
-    config_renderers(cfg)
+        return (not os.path.exists(out_file) or 
+            os.path.getmtime(in_file) > os.path.getmtime(out_file))
 
-    parse_rules(renderers)
+    def match_and_compile(path):
+        try:
+            mr = rule_matcher(path)
+            out_path = mr.router(path)
+
+            if should_compile_file(path, out_path):
+                print('compiling: '+path+'; '+out_path)
+                mr.renderer(path, out_path)
+
+        except psException as e:
+            pass
+
+    return match_and_compile
+
+
+
+def compile_site():
+    # rule matcher
+    rm = make_rule_matcher(config_renderers(cfg, SiteMap()))
+    match_and_compile = macmaker(rm)
 
     # compile input folder
     for o in os.walk(cfg.site_dir):

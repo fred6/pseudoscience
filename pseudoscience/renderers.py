@@ -6,7 +6,7 @@ from jinja2 import Environment, FileSystemLoader
 from pseudoscience.util import *
 
 
-def config_renderers(cfg):
+def config_renderers(cfg, smap):
     renderers = jinja2_renderers(cfg, smap.smap)
     renderers['_id'] = make_id_renderer(cfg)
     return renderers
