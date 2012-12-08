@@ -21,7 +21,7 @@ class Jinja2Renderer:
         self.tpl = Jinja2Renderer.env.get_template(name+tplext)
 
     def render(self, vs):
-        self.tpl.render(vs)
+        return self.tpl.render(vs)
 
     @classmethod
     def setupEnv(cls, d):
@@ -76,8 +76,8 @@ class SiteChef:
 
 
     def renderPages(self):
+        print('renderPages')
         pages = ['.md', '.rst']
-
         self._create_folder_if_not_exists(self.out_dir)
 
         for fname in os.listdir(self.site_dir):
@@ -95,7 +95,7 @@ class SiteChef:
                     pv['content'] = bytes.decode(converted)
 
                 target_fpath = self.out_dir + name + '.html'
-                print(target_fpath+"\n\n")
+                print(' -- '+target_fpath)
                 with open(target_fpath, 'w') as f:
                     f.write(str(self.tpl_renderer.render(pv)))
 
