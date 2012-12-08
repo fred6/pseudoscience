@@ -60,15 +60,20 @@ class SiteChef:
         return ('.' in fname) and (fname[fname.index('.'):] in pages)
 
 
+    # assumes you feed in the trailing slash
     def copyDirectory(self, folder):
-        print("copyDir w/ folder = "+folder+"\n\n")
-        self._create_folder_if_not_exists(self.out_dir + folder)
-        for fname in os.listdir(self.site_dir + folder):
-            print(fname)
-            if self._isPage(fname):
-                site_file = self.site_dir + fname
-                out_file = self.out_dir + fname
-                shutil.copy(site_file, out_file)
+        src_folder = self.site_dir + folder
+        tgt_folder = self.out_dir + folder
+        print("copyDir w/ folder = "+folder)
+        self._create_folder_if_not_exists(tgt_folder)
+        for fname in os.listdir(src_folder):
+            site_file = src_folder + fname
+            out_file =  tgt_folder + fname
+            print(" -- copying "+site_file+" to "+out_file)
+            shutil.copy(site_file, out_file)
+
+        print("\n")
+
 
     def renderPages(self):
         pages = ['.md', '.rst']
