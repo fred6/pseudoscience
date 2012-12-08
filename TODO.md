@@ -1,4 +1,0 @@
- - move convert() to renderer? i think markdown/rst => html output should be part of the renderer
- - if a template changes you have to recompile all the files that utilize that template
- - remove files from out_dir that are not legitimate outputs of compilation (i.e. a file is compiled to a.html, then rerouted to b.html and recompiled. a.html should be deleted)
- - metadata via yaml: tags/categories and a 'status' thing so that a page can be not published if its not ready
