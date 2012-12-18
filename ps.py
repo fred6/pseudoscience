@@ -8,7 +8,7 @@ config = {
         'site_dir': './',
         'out_dir': 'out/',
         'templates_dir': 'templates',
-        'site_title': 'jackanapes'
+        'site_title': 'Jackanapes'
         }
 
 
@@ -47,6 +47,8 @@ class SiteChef:
         self.out_dir = config['out_dir']
         self.site_dir = config['site_dir']
         self.templates_dir = config['templates_dir']
+        self.site_title = config['site_title']
+
         self.tpl_renderer = renderer
         self.pg_converter = converter
 
@@ -86,7 +88,7 @@ class SiteChef:
                 src_fpath = self.site_dir + fname
                 name = fname[:fname.index('.')]
                 ext = fname[fname.index('.'):]
-                pv = {'name': name}
+                pv = {'title': self.site_title + ' - ' + name}
 
                 with open(src_fpath, 'r') as file:
                     content = file.read()
