@@ -44,10 +44,8 @@ class PandocConverter:
 
 class SiteChef:
     def __init__(self, config, renderer, converter):
-        self.out_dir = config['out_dir']
-        self.site_dir = config['site_dir']
-        self.templates_dir = config['templates_dir']
-        self.site_title = config['site_title']
+        for c in config:
+            setattr(self, c, config[c])
 
         self.tpl_renderer = renderer
         self.pg_converter = converter
