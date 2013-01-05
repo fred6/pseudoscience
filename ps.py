@@ -39,7 +39,7 @@ class PandocConverter:
         p = subprocess.Popen(['pandoc', '--from=' + from_format, '--to=' + to_format, '--mathjax'],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
-        return p.communicate(bytes(source, 'UTF-8'))[0]
+        return bytes.decode(p.communicate(bytes(source, 'UTF-8'))[0])
 
 
 class SiteCompiler:
@@ -48,7 +48,7 @@ class SiteCompiler:
             setattr(self, c, config[c])
 
         self.tpl_renderer = renderer
-        self.pg_converter = converter
+        self.pgc = converter
 
 
     def _create_folder_if_not_exists(self, folder):
@@ -91,8 +91,7 @@ class SiteCompiler:
                 with open(src_fpath, 'r') as file:
                     content = file.read()
                     src_format = 'markdown' if ext == '.md' else 'rst'
-                    converted = self.pg_converter.convert(content, src_format, 'html')
-                    pv['content'] = bytes.decode(converted)
+                    pv['content'] = self.pgc.convert(content, src_format, 'html')
 
                 target_fpath = self.out_dir + name + '.html'
                 print(' -- '+target_fpath)
