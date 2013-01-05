@@ -42,7 +42,7 @@ class PandocConverter:
         return p.communicate(bytes(source, 'UTF-8'))[0]
 
 
-class SiteChef:
+class SiteCompiler:
     def __init__(self, config, renderer, converter):
         for c in config:
             setattr(self, c, config[c])
@@ -110,8 +110,8 @@ class SiteChef:
 
 def compile_site(config):
     Jinja2Renderer.setupEnv(config['templates_dir'])
-    chef = SiteChef(config, Jinja2Renderer('layout'), PandocConverter())
-    chef.compile()
+    sc = SiteCompiler(config, Jinja2Renderer('layout'), PandocConverter())
+    sc.compile()
 
 
 if __name__ == '__main__':
